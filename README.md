@@ -1,32 +1,62 @@
-# React + TypeScript + Vite
+# TerraVid — Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend web de oficina del ERP agrícola TerraVid: dashboard, ABMs (fincas, cuarteles, usuarios) y configuración. Pensado para uso del Propietario y el Agrónomo desde una computadora, a diferencia de la app [`Mobile`](https://github.com/TerraVidMza/Mobile) (uso en campo, offline-first).
 
-Currently, two official plugins are available:
+> **Alcance:** este repositorio contiene únicamente el **Frontend web**. El proyecto TerraVid se organiza en 4 repositorios dentro de la organización [TerraVidMza](https://github.com/TerraVidMza) en GitHub.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Repositorios del proyecto
 
-## React Compiler
+| Repo | Contenido |
+|---|---|
+| [`Backend`](https://github.com/TerraVidMza/Backend) | API REST — NestJS + TypeORM + PostgreSQL/PostGIS |
+| [`Web`](https://github.com/TerraVidMza/Web) (este repo) | Frontend web de oficina |
+| [`Mobile`](https://github.com/TerraVidMza/Mobile) | App móvil offline-first para campo (React Native / Expo) |
+| [`IoTSensor`](https://github.com/TerraVidMza/IoTSensor) | Firmware de los nodos de telemetría (ESP32) |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> Cómo se comunican estos 4 componentes entre sí está detallado en [`docs/ARCHITECTURE.md` del repo Backend](https://github.com/TerraVidMza/Backend/blob/develop/docs/ARCHITECTURE.md).
 
-## Expanding the Oxlint configuration
+## Stack
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- **React 19 + TypeScript + Vite**
+- **Tailwind CSS 4** + **shadcn/ui** (Radix UI) para componentes
+- **TanStack Query** para estado de servidor / cache de datos remotos
+- **React Router** para ruteo
+- **react-hook-form + zod** para formularios y validación
+- **Axios** como cliente HTTP contra el Backend (NestJS)
+- **Oxlint** para lint (en vez de ESLint)
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Requisitos
+
+- Node.js 20+
+- El [`Backend`](https://github.com/TerraVidMza/Backend) corriendo (local o remoto) para que la app tenga con qué autenticarse y consumir datos.
+
+## Puesta en marcha
+
+```bash
+npm install
+cp .env.example .env   # ajustar VITE_API_URL si el backend no corre en localhost:3000
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+La app queda disponible en `http://localhost:5173`.
+
+## Rutas implementadas (primera entrega)
+
+| Ruta | Página | Estado |
+|---|---|---|
+| `/login` | Login | Conectada al Backend |
+| `/` | Dashboard | Conectada — indicadores clave |
+| `/fincas` | Fincas | Conectada — ABM |
+| `/fincas/:fincaId/cuarteles` | Cuarteles | Conectada — ABM |
+| `/usuarios` (solo Propietario) | Usuarios | Conectada — ABM |
+| `/configuracion` (solo Propietario) | Configuración | Conectada |
+| `/operaciones` | Operaciones | Placeholder — pendiente conectar a labores/insumos/costos |
+| `/telemetria` | Telemetría IoT | Placeholder — pendiente conectar a sensores/lecturas/alertas |
+| `/vendimia` | Vendimia | Placeholder — pendiente conectar a cuadrillas/pesajes/remitos |
+| `/ayuda` | Ayuda | Placeholder — pendiente manual/FAQs |
+
+El acceso por rol se controla en `src/routes/protected-route.tsx` (`ProtectedRoute` exige sesión; `RoleRoute` restringe por rol).
+
+## Contribuir
+
+Ver [`CONTRIBUTING.md`](CONTRIBUTING.md) para la política de branching (Gitflow) del proyecto.
