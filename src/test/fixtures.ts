@@ -32,6 +32,10 @@ export const IDS = {
   insumo: "e1111111-1111-4111-8111-111111111111",
   tipoLabor: "e2222222-2222-4222-8222-222222222222",
   registroLabor: "e3333333-3333-4333-8333-333333333333",
+  cuadrilla: "f3333333-3333-4333-8333-333333333333",
+  remitoBorrador: "f4444444-4444-4444-8444-444444444444",
+  remitoAprobado: "f5555555-5555-4555-8555-555555555555",
+  pesaje: "f6666666-6666-4666-8666-666666666666",
 } as const
 
 /**
@@ -177,7 +181,7 @@ export const CUARTELES = [
   },
 ]
 
-const ESTADO_COSECHA = {
+const ESTADO_COSECHA_GLOBAL = {
   total: 3,
   porEstado: [
     { estado: "pendiente", cuarteles: 1, porcentaje: 33.3 },
@@ -198,7 +202,7 @@ const OPERATIVOS = {
     desde: "2026-02-01",
     hasta: "2026-06-30",
   },
-  estadoCosechaGlobal: ESTADO_COSECHA,
+  estadoCosechaGlobal: ESTADO_COSECHA_GLOBAL,
 }
 
 export const LOG_AUDITORIA = [
@@ -491,3 +495,162 @@ export const REGISTROS_LABOR = [
     ],
   },
 ]
+
+
+// ─── Vendimia (HU-23, 26, 27, 28) ────────────────────────────────────────────
+
+export const CUADRILLAS = [
+  {
+    id: IDS.cuadrilla,
+    fincaId: IDS.finca,
+    nombre: "Cuadrilla Norte",
+    cantidadIntegrantes: 8,
+    activa: true,
+    createdAt: "2026-02-10T12:00:00.000Z",
+    updatedAt: null,
+  },
+]
+
+/** `tarifaPorKg` es `decimal(10,4)`: string. La de 2099 no rige todavia. */
+export const TARIFAS = [
+  {
+    id: "f9111111-1111-4111-8111-111111111111",
+    cuadrillaId: IDS.cuadrilla,
+    tarifaPorKg: "95.0000",
+    validFrom: "2099-01-01",
+    createdById: IDS.propietario,
+    createdAt: "2026-08-01T12:00:00.000Z",
+  },
+  {
+    id: "f9222222-2222-4222-8222-222222222222",
+    cuadrillaId: IDS.cuadrilla,
+    tarifaPorKg: "80.0000",
+    validFrom: "2026-02-01",
+    createdById: IDS.propietario,
+    createdAt: "2026-02-01T12:00:00.000Z",
+  },
+]
+
+const cuartelDeRemito = {
+  id: IDS.cuartel,
+  nombre: "Cuartel 1",
+  fincaId: IDS.finca,
+  finca: { id: IDS.finca, nombre: "Finca El Rosal" },
+  variedad: { id: IDS.variedad, nombre: "Malbec" },
+}
+
+/** `totalKg` y `totalLiquidacion` son decimales: llegan como string. */
+export const REMITOS = [
+  {
+    id: IDS.remitoBorrador,
+    numeroRemito: "REM-2026-00012",
+    cuartelId: IDS.cuartel,
+    generadoPorId: IDS.capataz,
+    aprobadoPorId: null,
+    rechazadoPorId: null,
+    estado: "borrador",
+    totalKg: "2000.00",
+    totalLiquidacion: "160000.00",
+    motivoRechazo: null,
+    fecha: "2026-03-05",
+    fechaGeneracion: "2026-03-05T20:00:00.000Z",
+    fechaAprobacion: null,
+    fechaRechazo: null,
+    cuartel: cuartelDeRemito,
+  },
+  {
+    id: IDS.remitoAprobado,
+    numeroRemito: "REM-2026-00011",
+    cuartelId: IDS.cuartel,
+    generadoPorId: IDS.capataz,
+    aprobadoPorId: IDS.propietario,
+    rechazadoPorId: null,
+    estado: "aprobado",
+    totalKg: "3500.00",
+    totalLiquidacion: "280000.00",
+    motivoRechazo: null,
+    fecha: "2026-03-01",
+    fechaGeneracion: "2026-03-01T20:00:00.000Z",
+    fechaAprobacion: "2026-03-02T10:00:00.000Z",
+    fechaRechazo: null,
+    cuartel: cuartelDeRemito,
+  },
+]
+
+export const PESAJES = [
+  {
+    id: IDS.pesaje,
+    localUuid: "fa111111-1111-4111-8111-111111111111",
+    cuadrillaId: IDS.cuadrilla,
+    cuartelId: IDS.cuartel,
+    registradoPorId: IDS.capataz,
+    remitoId: IDS.remitoBorrador,
+    fecha: "2026-03-05",
+    kgTotales: "2000.00",
+    tarifaUtilizada: "80.0000",
+    montoLiquidacion: "160000.00",
+    estadoSync: "sincronizado",
+    errorMessage: null,
+    estado: "en_remito",
+    cuadrilla: { id: IDS.cuadrilla, nombre: "Cuadrilla Norte" },
+  },
+]
+
+/**
+ * Liquidacion de bodega: los kilos aceptados son **menos** que los despachados
+ * —la bodega descuenta por materia extraña— y hay descuentos. Es el caso que
+ * distingue el ingreso real del importe bruto.
+ */
+export const LIQUIDACION = {
+  id: "fb111111-1111-4111-8111-111111111111",
+  remitoId: IDS.remitoAprobado,
+  bodega: "Bodega La Consulta",
+  kgAceptados: "3400.00",
+  precioPorKg: "260.0000",
+  descuentos: "40000.00",
+  montoNeto: "844000.00",
+  fecha: "2026-03-20",
+  numeroComprobante: "LIQ-8891",
+  registradoPorId: IDS.propietario,
+  createdAt: "2026-03-20T12:00:00.000Z",
+}
+
+/** Los numeros vienen casteados con `Number(...)` en el service. */
+export const ESTADO_COSECHA = {
+  cuarteles: [
+    {
+      cuartelId: IDS.cuartel,
+      cuartelNombre: "Cuartel 1",
+      estado: "en_cosecha",
+      hectareas: 6,
+      kgTotalesCosechados: 5500,
+      kgLiquidados: 3500,
+      kgPendientesDeRemito: 0,
+      kgObservados: 2000,
+      cantidadCuadrillas: 1,
+      montoLiquidadoTotal: 440000,
+      rendimientoKgPorHa: 916.67,
+    },
+    {
+      cuartelId: "c2222222-2222-4222-8222-222222222222",
+      cuartelNombre: "Cuartel 2",
+      estado: "pendiente",
+      hectareas: null,
+      kgTotalesCosechados: 0,
+      kgLiquidados: 0,
+      kgPendientesDeRemito: 0,
+      kgObservados: 0,
+      cantidadCuadrillas: 0,
+      montoLiquidadoTotal: 0,
+      rendimientoKgPorHa: null,
+    },
+  ],
+  totales: {
+    kgTotalesCosechados: 5500,
+    kgLiquidados: 3500,
+    montoLiquidadoTotal: 440000,
+    cuartelesCosechados: 0,
+    cuartelesEnCosecha: 1,
+    cuartelesPendientes: 1,
+  },
+}

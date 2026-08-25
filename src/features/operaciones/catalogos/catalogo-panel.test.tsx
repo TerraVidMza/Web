@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { CatalogoPanel } from "./catalogo-panel"
 import { INSUMOS, TIPOS_LABOR } from "./config"
-import { clasificarCostos } from "./use-catalogo-costeable"
+import { clasificarVigencias } from "./use-catalogo-costeable"
 import { costosSchema } from "@/api/schemas/operaciones"
 import { COSTOS_INSUMO } from "@/test/fixtures"
 import { iniciarSesionComo, renderConProveedores, screen, waitFor } from "@/test/utils"
@@ -134,18 +134,18 @@ describe("CatalogoPanel (HU-16)", () => {
   })
 })
 
-describe("clasificarCostos", () => {
+describe("clasificarVigencias", () => {
   const costos = costosSchema.parse(COSTOS_INSUMO)
 
   it("el vigente es el más reciente que ya empezó, no el primero de la lista", () => {
-    const clasificados = clasificarCostos(costos, "2026-08-25")
+    const clasificados = clasificarVigencias(costos, "2026-08-25")
 
     expect(clasificados.find((c) => c.esVigente)?.costoUnitario).toBe(1500)
     expect(clasificados.filter((c) => c.esFuturo)).toHaveLength(1)
   })
 
   it("sin ningún costo ya vigente, ninguno se marca como tal", () => {
-    const clasificados = clasificarCostos(costos, "2020-01-01")
+    const clasificados = clasificarVigencias(costos, "2020-01-01")
     expect(clasificados.some((c) => c.esVigente)).toBe(false)
     expect(clasificados.every((c) => c.esFuturo)).toBe(true)
   })

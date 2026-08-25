@@ -4,7 +4,6 @@ import type {
   CrearCatalogoCosteableInput,
   NuevoCostoInput,
 } from "@/api/endpoints/operaciones"
-import type { CostoVigencia } from "@/api/schemas/operaciones"
 import { CACHE } from "@/lib/cache"
 import type { CatalogoCosteableConfig } from "./config"
 
@@ -81,35 +80,34 @@ export function hoyIso(): string {
   return `${ahora.getFullYear()}-${mes}-${dia}`
 }
 
-export interface CostoClasificado extends CostoVigencia {
-  /** El que rige hoy: el más reciente con `validFrom <= hoy`. */
-  esVigente: boolean
-  /** Programado para más adelante; todavía no se aplica a ninguna labor. */
-  esFuturo: boolean
-}
-
 /**
- * Marca cuál de los costos rige hoy y cuáles están programados.
+ * Marca cuál de las vigencias rige hoy y cuáles están programadas.
  *
- * El backend devuelve el historial completo ordenado por `validFrom` DESC, así
- * que **el primero no es necesariamente el vigente**: si alguien cargó un costo
- * con fecha futura, ese encabeza la lista. Sin esta distinción la pantalla
- * mostraría como precio actual uno que todavía no se aplica.
+ * Genérica porque el patrón es el mismo en tres lugares: los costos de insumo,
+ * los de tipo de labor y las tarifas de cuadrilla. Los tres son tablas
+ * append-only con `valid_from`, y los tres los devuelve el backend ordenados
+ * por fecha **descendente** — así que **el primero no es necesariamente el
+ * vigente**: si alguien cargó una vigencia futura, esa encabeza la lista. Sin
+ * esta distinción la pantalla mostraría como valor actual uno que todavía no se
+ * aplica.
  *
  * La comparación es de texto: `validFrom` es un `date` sin hora ni huso, y
  * pasarlo por `new Date()` lo corre un día en zonas horarias negativas.
  */
-export function clasificarCostos(costos: CostoVigencia[], hoy = hoyIso()): CostoClasificado[] {
-  const vigente = costos
-    .filter((costo) => costo.validFrom <= hoy)
-    .reduce<CostoVigencia | null>(
-      (mejor, costo) => (mejor === null || costo.validFrom > mejor.validFrom ? costo : mejor),
+export function clasificarVigencias<T extends { id: string; validFrom: string }>(
+  vigencias: T[],
+  hoy = hoyIso()
+): Array<T & { esVigente: boolean; esFuturo: boolean }> {
+  const vigente = vigencias
+    .filter((v) => v.validFrom <= hoy)
+    .reduce<T | null>(
+      (mejor, v) => (mejor === null || v.validFrom > mejor.validFrom ? v : mejor),
       null
     )
 
-  return costos.map((costo) => ({
-    ...costo,
-    esVigente: costo.id === vigente?.id,
-    esFuturo: costo.validFrom > hoy,
+  return vigencias.map((v) => ({
+    ...v,
+    esVigente: v.id === vigente?.id,
+    esFuturo: v.validFrom > hoy,
   }))
 }

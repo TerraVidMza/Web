@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react"
 import { AlertDialog } from "radix-ui"
-import { AlertTriangle, Loader2 } from "lucide-react"
+import { AlertTriangle, CircleHelp, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { mensajeDeError } from "@/api/errores"
 import { cn } from "@/lib/utils"
@@ -15,6 +15,12 @@ interface Props {
   onConfirmar: () => Promise<void>
   /** Mensaje de respaldo si el backend no manda uno. */
   errorPorDefecto?: string
+  /**
+   * `destructivo` para bajas y borrados; `confirmacion` para acciones que
+   * conviene revisar pero no destruyen nada —aprobar un remito, por ejemplo—.
+   * Pintar de rojo un "Aprobar" enseña a ignorar el color.
+   */
+  tono?: "destructivo" | "confirmacion"
 }
 
 /**
@@ -38,7 +44,10 @@ export function DialogoConfirmacion({
   textoConfirmar,
   onConfirmar,
   errorPorDefecto = "No se pudo completar la operación",
+  tono = "destructivo",
 }: Props) {
+  const esDestructivo = tono === "destructivo"
+  const Icono = esDestructivo ? AlertTriangle : CircleHelp
   const [abierto, setAbierto] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,8 +83,16 @@ export function DialogoConfirmacion({
           )}
         >
           <div className="flex gap-3">
-            <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="size-4 text-destructive" aria-hidden="true" />
+            <div
+              className={cn(
+                "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
+                esDestructivo ? "bg-destructive/10" : "bg-primary/10"
+              )}
+            >
+              <Icono
+                className={cn("size-4", esDestructivo ? "text-destructive" : "text-primary")}
+                aria-hidden="true"
+              />
             </div>
             <div className="space-y-1.5">
               <AlertDialog.Title className="font-heading text-base leading-snug font-medium">
@@ -105,7 +122,11 @@ export function DialogoConfirmacion({
             {/* Fuera de `AlertDialog.Action`: ese componente cierra el diálogo
                 al hacer clic, y acá el cierre depende de que la request salga
                 bien. */}
-            <Button variant="destructive" disabled={enviando} onClick={() => void confirmar()}>
+            <Button
+              variant={esDestructivo ? "destructive" : "default"}
+              disabled={enviando}
+              onClick={() => void confirmar()}
+            >
               {enviando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
               {textoConfirmar}
             </Button>

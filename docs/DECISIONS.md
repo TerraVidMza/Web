@@ -185,3 +185,45 @@ rige cada precio y cuáles están programados a futuro.
 —un costo cargado con fecha futura encabeza la lista—. La pantalla marca
 «Vigente» y «Programado» por separado; sin esa distinción mostraría como precio
 actual uno que todavía no se aplica.
+
+---
+
+## W-013 — El remito se imprime con CSS, no con un PDF del servidor
+
+**Decisión (D-h):** `/remitos/:id` es una pantalla normal con reglas `@media
+print` y clases `print:` de Tailwind. El botón «Imprimir» llama a
+`window.print()`.
+
+**Por qué:** `GET /remitos/:id` ya trae cuartel, finca, variedad y el detalle de
+pesajes. Un PDF del lado del servidor sería un módulo nuevo en el backend —una
+librería de render, plantillas, un endpoint más— para un requisito que el
+navegador cubre. Si más adelante hace falta un PDF firmado o adjunto a un mail,
+ahí sí conviene generarlo en el backend.
+
+---
+
+## W-014 — La fecha es obligatoria al generar un borrador de remito
+
+**Contexto:** `GenerarRemitoDto.fecha` es `@IsOptional()` en el backend, y
+omitirla arrastra **todos** los pesajes pendientes del cuartel sin importar de
+cuándo sean. El propio DTO explica que se dejó opcional para no romper clientes
+existentes.
+
+**Decisión:** esta pantalla la exige igual. Un remito de vendimia documenta el
+despacho de una jornada, no el acumulado histórico, y un borrador con pesajes de
+tres semanas distintas es un error caro de deshacer —hay que rechazarlo, y el
+rechazo deja los pesajes observados—.
+
+---
+
+## W-015 — Una sola función clasifica todas las vigencias
+
+**Decisión:** `clasificarVigencias()` marca cuál valor rige hoy y cuáles están
+programados, y la usan los costos de insumo, los de tipo de labor y las tarifas
+de cuadrilla.
+
+**Por qué:** las tres son tablas append-only con `valid_from`, y las tres las
+devuelve el backend ordenadas por fecha **descendente**. Eso significa que **el
+primer elemento no es necesariamente el vigente**: una vigencia cargada con
+fecha futura encabeza la lista. Resolverlo tres veces era garantizar que dos de
+las tres pantallas mostraran como valor actual uno que todavía no se aplica.
