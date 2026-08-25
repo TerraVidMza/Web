@@ -161,6 +161,30 @@ describe("AppRouter", () => {
     expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
   })
 
+  it("Configuración tiene los parámetros y las tablas maestras", async () => {
+    iniciarSesionComo("Propietario")
+    renderConProveedores(<AppRouter />, { ruta: "/configuracion/catalogos" })
+
+    expect(await screen.findByRole("heading", { name: "Configuración" })).toBeInTheDocument()
+    expect(await screen.findByText("Malbec")).toBeInTheDocument()
+  })
+
+  it("Ayuda es para todos los roles", async () => {
+    iniciarSesionComo("Capataz")
+    renderConProveedores(<AppRouter />, { ruta: "/ayuda" })
+
+    expect(await screen.findByRole("heading", { name: "Ayuda" })).toBeInTheDocument()
+    expect(await screen.findByText(/Cómo dar de alta una finca/i)).toBeInTheDocument()
+  })
+
+  it("el mapa vive con fincas y comparte su permiso", async () => {
+    iniciarSesionComo("Auditor")
+    renderConProveedores(<AppRouter />, { ruta: "/mapa" })
+
+    // El Auditor no puede listar fincas, así que tampoco entra al mapa.
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+  })
+
   it("una ruta inexistente muestra el 404", async () => {
     iniciarSesionComo("Propietario")
     renderConProveedores(<AppRouter />, { ruta: "/no-existe" })
