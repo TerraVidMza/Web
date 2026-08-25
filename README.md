@@ -25,6 +25,7 @@ Frontend web de oficina del ERP agrícola TerraVid: dashboard, ABMs (fincas, cua
 - **react-hook-form** para formularios
 - **Axios** como cliente HTTP contra el Backend (NestJS)
 - **Vitest + React Testing Library + MSW** para tests
+- **Recharts** para los gráficos de series de tiempo
 - **Oxlint** para lint (en vez de ESLint)
 
 ## Requisitos
@@ -99,7 +100,9 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/operaciones/insumos` | Insumos | Conectada — ABM con versionado de costos (HU-16) |
 | `/operaciones/tipos-labor` | Tipos de labor | Conectada — ABM con versionado de costos (HU-16) |
 | `/cuarteles/:cuartelId/historial` | Historial de operaciones | Conectada — paginado; también accesible al Auditor (HU-17) |
-| `/telemetria` (Propietario, Agrónomo) | Telemetría IoT | Placeholder — pendiente conectar a sensores/lecturas/alertas |
+| `/telemetria` (Propietario, Agrónomo) | Sensores | Conectada — con la última lectura de cada nodo (HU-18) |
+| `/telemetria/alertas` | Alertas de umbral | Conectada — bandeja de pendientes (HU-22) |
+| `/sensores/:sensorId` | Serie del sensor | Conectada — gráfico con banda min-máx, vista de tabla y umbrales (HU-20, HU-21) |
 | `/vendimia` (Propietario, Agrónomo, Capataz) | Remitos | Conectada — bandeja de aprobación, aprobar y rechazar con motivo (HU-27) |
 | `/vendimia/cosecha` | Estado de cosecha | Conectada — avance por cuartel y rendimiento (HU-28) |
 | `/vendimia/cuadrillas` | Cuadrillas | Conectada — ABM con versionado de tarifas (HU-23) |
@@ -112,7 +115,7 @@ El acceso por rol sale de una sola tabla, [`src/auth/permisos.ts`](src/auth/perm
 
 ## Qué falta
 
-Los bloques 7 a 10 de la Fase 3 del plan de mejoras: Telemetría (HU-18, 20, 21, 22), Inteligencia agronómica (29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+Los bloques 8 a 10 de la Fase 3 del plan de mejoras: Inteligencia agronómica (HU-29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
 
 Dos límites que vienen del backend y conviene tener presentes:
 

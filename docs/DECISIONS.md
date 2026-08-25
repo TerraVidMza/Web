@@ -227,3 +227,45 @@ devuelve el backend ordenadas por fecha **descendente**. Eso significa que **el
 primer elemento no es necesariamente el vigente**: una vigencia cargada con
 fecha futura encabeza la lista. Resolverlo tres veces era garantizar que dos de
 las tres pantallas mostraran como valor actual uno que todavía no se aplica.
+
+---
+
+## W-016 — Recharts, con su costo medido
+
+**Decisión (D-b), ahora ejecutada:** Recharts 3 para los gráficos de series de
+tiempo.
+
+**Lo que cuesta, medido:** la librería pesa **372 kB** en su propio chunk. Queda
+aislada en la ruta `/sensores/:sensorId`, que es la única que grafica: el chunk
+de entrada pasó de 338 a 383 kB, y de esos 45 kB unos 39 son un chunk compartido
+que Rolldown plegó adentro al redibujar los límites — el crecimiento real del
+shell es de unos 6 kB. Nadie que no abra la serie de un sensor descarga Recharts.
+
+Vale tenerlo anotado: si más adelante hacen falta gráficos en el dashboard —que
+sí es la primera pantalla— ese costo se muda al camino crítico, y ahí conviene
+volver a mirarlo.
+
+---
+
+## W-017 — Cómo se dibuja la serie de un sensor
+
+**Decisión:** una línea de promedio con una banda de mínimo a máximo, umbrales
+como líneas de referencia etiquetadas, y una vista de tabla al lado.
+
+**Por qué la banda:** cada punto es el agregado de un período completo —el
+backend agrega en SQL porque un mes de un sensor que mide cada 5 minutos son
+~9.000 puntos—. Dibujar solo el promedio fingiría una precisión que el dato no
+tiene y escondería las oscilaciones, que es justamente lo que un agrónomo mira.
+
+**Por qué los umbrales van etiquetados:** son colores de estado, y un color de
+estado nunca puede cargar significado solo.
+
+**Por qué la tabla:** es el relevo de accesibilidad para quien no puede leer la
+forma del gráfico, y de paso es lo que se copia cuando alguien quiere los
+números.
+
+**Colores:** azul de serie y rojo de límite, validados contra las superficies
+reales de la aplicación (`#ffffff` y `#171717`) en los dos modos: separación CVD
+ΔE 23.8 claro / 25.7 oscuro y contraste ≥ 3:1 en ambos. El modo oscuro usa pasos
+propios, no un volteo automático del claro. No hay caja de leyenda porque hay una
+sola serie y el título la nombra.
