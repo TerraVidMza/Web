@@ -29,7 +29,8 @@ Frontend web de oficina del ERP agrícola TerraVid: dashboard, ABMs (fincas, cua
 
 ## Requisitos
 
-- Node.js 20+
+- **Node.js 22.22.2+ o 24.15+** (la versión que usa el CI está en [`.nvmrc`](.nvmrc); con `nvm use` alcanza).
+  El piso lo fija `jsdom`, que se usa en los tests y no soporta Node 20. `npm ci` corre con `engine-strict`, así que una versión incorrecta falla al instalar en vez de aparecer más tarde como un test roto.
 - El [`Backend`](https://github.com/TerraVidMza/Backend) corriendo (local o remoto) para que la app tenga con qué autenticarse y consumir datos.
 
 ## Puesta en marcha

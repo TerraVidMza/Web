@@ -25,9 +25,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # La version sale de `.nvmrc`, no de un literal acá: cuando estaban en dos
+      # lugares, el CI corria en Node 20 mientras las dependencias de test
+      # pedian 22+, y el desajuste solo se veia como un fallo de `npm test`.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Instalar dependencias
