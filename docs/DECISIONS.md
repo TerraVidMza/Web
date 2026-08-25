@@ -269,3 +269,47 @@ reales de la aplicación (`#ffffff` y `#171717`) en los dos modos: separación C
 ΔE 23.8 claro / 25.7 oscuro y contraste ≥ 3:1 en ambos. El modo oscuro usa pasos
 propios, no un volteo automático del claro. No hay caja de leyenda porque hay una
 sola serie y el título la nombra.
+
+---
+
+## W-018 — La correlación va en dos gráficos, nunca en uno con dos ejes
+
+**Decisión (HU-29):** la serie del sensor y la del costo diario se dibujan en
+**gráficos separados** que comparten el eje de fechas.
+
+**Por qué:** son magnitudes de escalas distintas. Superponerlas con dos ejes Y
+hace que la alineación de las dos escalas —que es arbitraria, la elige quien
+dibuja— produzca una correlación visual que el dato no respalda. Es el error de
+gráfico más común que existe, y acá sería especialmente grave: la pantalla
+entera trata sobre si hay o no relación entre las dos variables.
+
+La relación real la dice el coeficiente de Pearson, que calcula el backend con
+su propio umbral de significancia (7 días con dato en ambas series).
+
+---
+
+## W-019 — Con datos insuficientes, el coeficiente no se presenta como veredicto
+
+**Decisión:** cuando `datosSuficientes` es `false`, la pantalla muestra el aviso
+del backend y cuántos días faltan, junto al número.
+
+**Por qué:** el coeficiente viene igual —con tres días puede dar 0,98— y
+mostrarlo solo se leería como una conclusión agronómica sobre el cuartel cuando
+en realidad falta período. El texto y el umbral los emite el backend para que el
+cliente no duplique la regla.
+
+---
+
+## W-020 — La comparación entre campañas es una tabla, no un gráfico
+
+**Decisión (HU-31):** siete indicadores × dos períodos en una tabla, con la
+variación porcentual coloreada.
+
+**Por qué:** los indicadores tienen unidades distintas —kilos, pesos, pesos por
+hectárea—. Un gráfico de barras agrupadas obligaría a normalizarlos o a poner
+varias escalas, y lo que el productor lee es la variación, que es un número.
+
+**El detalle que hace legible la tabla:** el color de la variación lo decide
+`sentidoIndicadores`, que viene del backend. Un costo que sube es malo y unos
+kilos que suben son buenos, y eso no se deduce del signo. La flecha acompaña al
+color para que el sentido no dependa del color solo.

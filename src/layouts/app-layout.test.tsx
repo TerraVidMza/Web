@@ -26,6 +26,7 @@ describe("Menú por rol", () => {
       "Operaciones",
       "Telemetría IoT",
       "Vendimia",
+      "Inteligencia",
       "Log de auditoría",
       "Usuarios",
       "Configuración",
@@ -50,6 +51,7 @@ describe("Menú por rol", () => {
       "Operaciones",
       "Telemetría IoT",
       "Vendimia",
+      "Inteligencia",
     ]) {
       expect(menu().queryByRole("link", { name: prohibida })).not.toBeInTheDocument()
     }

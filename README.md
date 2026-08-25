@@ -109,13 +109,17 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/remitos/:remitoId` | Detalle del remito | Conectada — imprimible, con la liquidación de bodega (HU-27) |
 | `/cuarteles/:cuartelId/pesajes` | Pesajes del cuartel | Conectada — solo lectura (HU-26) |
 | `/configuracion` (Propietario) | Configuración | Placeholder — pendiente conectar a `GET/PUT /configuracion` |
+| `/inteligencia` (Propietario, Agrónomo) | Comparar campañas | Conectada — indicadores y variación con su sentido (HU-31) |
+| `/inteligencia/correlacion` | Correlación | Conectada — sensor contra costo, en gráficos separados (HU-29) |
+| `/inteligencia/recomendaciones` | Recomendaciones | Conectada — resolver como aplicada o descartada (HU-30) |
+| `/inteligencia/campanias` | Campañas | Conectada — ABM del corte temporal del sistema (D-014) |
 | `/ayuda` | Ayuda | Placeholder — pendiente manual/FAQs |
 
 El acceso por rol sale de una sola tabla, [`src/auth/permisos.ts`](src/auth/permisos.ts), derivada de los `@Roles` reales del backend. De ahí salen el menú, las guardas de ruta y los botones: no hay una segunda lista que pueda divergir.
 
 ## Qué falta
 
-Los bloques 8 a 10 de la Fase 3 del plan de mejoras: Inteligencia agronómica (HU-29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+Los bloques 9 y 10 de la Fase 3 del plan de mejoras: Configuración y tablas maestras (HU-33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
 
 Dos límites que vienen del backend y conviene tener presentes:
 

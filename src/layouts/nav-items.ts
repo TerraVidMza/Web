@@ -9,6 +9,7 @@ import {
   Radio,
   ScrollText,
   Settings,
+  Sparkles,
   Users,
   type LucideIcon,
 } from "lucide-react"
@@ -33,6 +34,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/operaciones", label: "Operaciones", icon: ClipboardList, permiso: "operaciones" },
   { to: "/telemetria", label: "Telemetría IoT", icon: Radio, permiso: "telemetria" },
   { to: "/vendimia", label: "Vendimia", icon: Grape, permiso: "vendimia" },
+  { to: "/inteligencia", label: "Inteligencia", icon: Sparkles, permiso: "inteligencia" },
   { to: "/auditoria", label: "Log de auditoría", icon: ScrollText, permiso: "logAuditoria" },
   { to: "/notificaciones", label: "Notificaciones", icon: Bell, permiso: "notificaciones" },
   { to: "/usuarios", label: "Usuarios", icon: Users, permiso: "usuarios" },
