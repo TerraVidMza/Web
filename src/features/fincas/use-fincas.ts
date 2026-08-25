@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  actualizarFinca,
   crearFinca,
   desactivarFinca,
   listarFincas,
+  type ActualizarFincaInput,
   type CrearFincaInput,
 } from "@/api/endpoints/fincas"
 import { CACHE } from "@/lib/cache"
@@ -31,10 +33,29 @@ export function useCrearFinca() {
   })
 }
 
+export function useActualizarFinca() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...input }: ActualizarFincaInput & { id: string }) =>
+      actualizarFinca(id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: clavesFincas.todas }),
+  })
+}
+
+/**
+ * Baja lógica. El backend responde **409** si la finca todavía tiene cuarteles
+ * activos, con el conteo en el mensaje: la baja no cascadea, y sin ese freno
+ * los cuarteles quedaban activos colgando de una finca invisible.
+ */
 export function useDesactivarFinca() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => desactivarFinca(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: clavesFincas.todas }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: clavesFincas.todas })
+      // El buscador de cuarteles filtra por finca; una finca dada de baja deja
+      // de ser una opción válida.
+      void queryClient.invalidateQueries({ queryKey: ["cuarteles"] })
+    },
   })
 }

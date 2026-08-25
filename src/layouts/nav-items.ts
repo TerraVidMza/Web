@@ -2,6 +2,7 @@ import {
   Bell,
   ClipboardList,
   Grape,
+  Grid2x2,
   HelpCircle,
   LayoutDashboard,
   Map,
@@ -27,7 +28,8 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, permiso: "dashboard" },
-  { to: "/fincas", label: "Fincas y Cuarteles", icon: Map, permiso: "fincas" },
+  { to: "/fincas", label: "Fincas", icon: Map, permiso: "fincas" },
+  { to: "/cuarteles", label: "Cuarteles", icon: Grid2x2, permiso: "fincas" },
   { to: "/operaciones", label: "Operaciones", icon: ClipboardList, permiso: "operaciones" },
   { to: "/telemetria", label: "Telemetría IoT", icon: Radio, permiso: "telemetria" },
   { to: "/vendimia", label: "Vendimia", icon: Grape, permiso: "vendimia" },

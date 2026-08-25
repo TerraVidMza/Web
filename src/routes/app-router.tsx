@@ -37,6 +37,11 @@ const FincasPage = lazy(() =>
 const CuartelesPage = lazy(() =>
   import("@/features/cuarteles/cuarteles-page").then((m) => ({ default: m.CuartelesPage }))
 )
+const BuscarCuartelesPage = lazy(() =>
+  import("@/features/cuarteles/buscar-cuarteles-page").then((m) => ({
+    default: m.BuscarCuartelesPage,
+  }))
+)
 const UsuariosPage = lazy(() =>
   import("@/features/usuarios/usuarios-page").then((m) => ({ default: m.UsuariosPage }))
 )
@@ -97,6 +102,10 @@ export function AppRouter() {
             <Route element={<RoleRoute permiso="fincas" />}>
               <Route path="fincas" element={<FincasPage />} />
               <Route path="fincas/:fincaId/cuarteles" element={<CuartelesPage />} />
+              {/* Los cuarteles de una finca y la búsqueda en toda la empresa
+                  son dos endpoints distintos del backend, y por eso dos rutas
+                  distintas: `/cuarteles` es HU-11. */}
+              <Route path="cuarteles" element={<BuscarCuartelesPage />} />
             </Route>
 
             <Route element={<RoleRoute permiso="operaciones" />}>
