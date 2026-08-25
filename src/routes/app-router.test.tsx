@@ -144,6 +144,23 @@ describe("AppRouter", () => {
     expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
   })
 
+  it("Inteligencia abre en la comparación y campañas es una de sus vistas", async () => {
+    iniciarSesionComo("Agronomo")
+    renderConProveedores(<AppRouter />, { ruta: "/inteligencia/campanias" })
+
+    expect(
+      await screen.findByRole("heading", { name: /Inteligencia agronómica/i })
+    ).toBeInTheDocument()
+    expect(await screen.findByRole("link", { name: "Comparar campañas" })).toBeInTheDocument()
+  })
+
+  it("el Capataz no entra a Inteligencia: cruza costos con telemetría", async () => {
+    iniciarSesionComo("Capataz")
+    renderConProveedores(<AppRouter />, { ruta: "/inteligencia" })
+
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+  })
+
   it("una ruta inexistente muestra el 404", async () => {
     iniciarSesionComo("Propietario")
     renderConProveedores(<AppRouter />, { ruta: "/no-existe" })

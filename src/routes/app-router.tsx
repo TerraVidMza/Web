@@ -91,6 +91,29 @@ const SensorDetallePage = lazy(() =>
 const AlertasPage = lazy(() =>
   import("@/features/telemetria/alertas-page").then((m) => ({ default: m.AlertasPage }))
 )
+const InteligenciaLayout = lazy(() =>
+  import("@/features/inteligencia/inteligencia-layout").then((m) => ({
+    default: m.InteligenciaLayout,
+  }))
+)
+const ComparacionPage = lazy(() =>
+  import("@/features/inteligencia/comparacion-page").then((m) => ({
+    default: m.ComparacionPage,
+  }))
+)
+const CorrelacionPage = lazy(() =>
+  import("@/features/inteligencia/correlacion-page").then((m) => ({
+    default: m.CorrelacionPage,
+  }))
+)
+const RecomendacionesPage = lazy(() =>
+  import("@/features/inteligencia/recomendaciones-page").then((m) => ({
+    default: m.RecomendacionesPage,
+  }))
+)
+const CampaniasPage = lazy(() =>
+  import("@/features/inteligencia/campanias-page").then((m) => ({ default: m.CampaniasPage }))
+)
 const VendimiaLayout = lazy(() =>
   import("@/features/vendimia/vendimia-layout").then((m) => ({ default: m.VendimiaLayout }))
 )
@@ -191,6 +214,18 @@ export function AppRouter() {
                   pestañas no tienen sentido en una hoja. */}
               <Route path="remitos/:remitoId" element={<RemitoDetallePage />} />
               <Route path="cuarteles/:cuartelId/pesajes" element={<PesajesPage />} />
+            </Route>
+
+            {/* Cruza costos con telemetria: `@Roles(P, A)` a nivel de clase
+                en el controller. Campanias es lectura para todos, pero vive
+                aca porque su unico consumidor de pantalla es HU-31. */}
+            <Route element={<RoleRoute permiso="inteligencia" />}>
+              <Route path="inteligencia" element={<InteligenciaLayout />}>
+                <Route index element={<ComparacionPage />} />
+                <Route path="correlacion" element={<CorrelacionPage />} />
+                <Route path="recomendaciones" element={<RecomendacionesPage />} />
+                <Route path="campanias" element={<CampaniasPage />} />
+              </Route>
             </Route>
 
             <Route element={<RoleRoute permiso="logAuditoria" />}>

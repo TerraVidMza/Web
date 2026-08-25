@@ -30,6 +30,12 @@ import {
   tokenDePrueba,
   usuarioSesion,
 } from "./fixtures"
+import {
+  CAMPANIAS,
+  COMPARACION,
+  CORRELACION,
+  RECOMENDACIONES,
+} from "./fixtures-inteligencia"
 
 const API = "http://localhost:3000/api"
 
@@ -735,6 +741,86 @@ export const handlers = [
       revisadaPorId: IDS.propietario,
       revisadaAt: new Date().toISOString(),
     })
+  ),
+
+  // Campanias e inteligencia (HU-29, 30, 31)
+
+  http.get(`${API}/campanias/actual`, () =>
+    HttpResponse.json(CAMPANIAS.find((c) => !c.cerrada) ?? null)
+  ),
+
+  http.get(`${API}/campanias`, () => HttpResponse.json(CAMPANIAS)),
+
+  http.post(`${API}/campanias`, async ({ request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/campanias")
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CAMPANIAS[0], ...body }, { status: 201 })
+  }),
+
+  http.patch(`${API}/campanias/:id/cerrar`, ({ params }) =>
+    HttpResponse.json({ ...CAMPANIAS[0], id: params.id, cerrada: true })
+  ),
+
+  http.patch(`${API}/campanias/:id/reabrir`, ({ params }) =>
+    HttpResponse.json({ ...CAMPANIAS[1], id: params.id, cerrada: false })
+  ),
+
+  http.patch(`${API}/campanias/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CAMPANIAS[0], id: params.id, ...body })
+  }),
+
+  http.get(`${API}/inteligencia-agronomica/correlacion/:cuartelId`, ({ request }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) {
+      return prohibido("/api/inteligencia-agronomica/correlacion")
+    }
+    const params = new URL(request.url).searchParams
+    // El backend responde 400 sin fechas o sin sensor. Antes era un 200 que
+    // decia "no hay suficientes datos": parecia un veredicto agronomico sobre
+    // el cuartel cuando en realidad faltaba el parametro.
+    if (!params.get("desde") || !params.get("hasta") || !params.get("sensorId")) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/inteligencia-agronomica/correlacion",
+          timestamp: new Date().toISOString(),
+          message: ["desde debe ser una fecha ISO (por ejemplo 2026-03-01)."],
+        },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json(CORRELACION)
+  }),
+
+  http.get(`${API}/inteligencia-agronomica/recomendaciones/:cuartelId`, () =>
+    conRoles(
+      ["Propietario", "Agronomo"],
+      "/api/inteligencia-agronomica/recomendaciones",
+      () => RECOMENDACIONES
+    )
+  ),
+
+  http.patch(
+    `${API}/inteligencia-agronomica/recomendaciones/:id`,
+    async ({ params, request }) => {
+      const body = (await request.json()) as { estado: string; nota?: string }
+      return HttpResponse.json({
+        ...RECOMENDACIONES[0],
+        id: params.id,
+        estado: body.estado,
+        nota: body.nota ?? null,
+        resueltaPorId: IDS.agronomo,
+        timestampEstado: new Date().toISOString(),
+      })
+    }
+  ),
+
+  http.get(`${API}/inteligencia-agronomica/comparar-campanias/:cuartelId`, () =>
+    conRoles(
+      ["Propietario", "Agronomo"],
+      "/api/inteligencia-agronomica/comparar",
+      () => COMPARACION
+    )
   ),
 
   http.get(`${API}/configuracion`, () =>
