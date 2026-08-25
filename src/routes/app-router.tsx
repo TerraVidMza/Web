@@ -75,8 +75,21 @@ const HistorialPage = lazy(() =>
     default: m.HistorialPage,
   }))
 )
-const TelemetriaPage = lazy(() =>
-  import("@/features/telemetria/telemetria-page").then((m) => ({ default: m.TelemetriaPage }))
+const TelemetriaLayout = lazy(() =>
+  import("@/features/telemetria/telemetria-layout").then((m) => ({
+    default: m.TelemetriaLayout,
+  }))
+)
+const SensoresPage = lazy(() =>
+  import("@/features/telemetria/sensores-page").then((m) => ({ default: m.SensoresPage }))
+)
+const SensorDetallePage = lazy(() =>
+  import("@/features/telemetria/sensor-detalle-page").then((m) => ({
+    default: m.SensorDetallePage,
+  }))
+)
+const AlertasPage = lazy(() =>
+  import("@/features/telemetria/alertas-page").then((m) => ({ default: m.AlertasPage }))
 )
 const VendimiaLayout = lazy(() =>
   import("@/features/vendimia/vendimia-layout").then((m) => ({ default: m.VendimiaLayout }))
@@ -159,7 +172,13 @@ export function AppRouter() {
             </Route>
 
             <Route element={<RoleRoute permiso="telemetria" />}>
-              <Route path="telemetria" element={<TelemetriaPage />} />
+              <Route path="telemetria" element={<TelemetriaLayout />}>
+                <Route index element={<SensoresPage />} />
+                <Route path="alertas" element={<AlertasPage />} />
+              </Route>
+              {/* Fuera del layout: la serie y sus umbrales son una pantalla de
+                  análisis, y las pestañas de la sección no aportan ahí. */}
+              <Route path="sensores/:sensorId" element={<SensorDetallePage />} />
             </Route>
 
             <Route element={<RoleRoute permiso="vendimia" />}>

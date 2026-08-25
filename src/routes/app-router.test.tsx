@@ -129,6 +129,21 @@ describe("AppRouter", () => {
     expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
   })
 
+  it("Telemetría abre en sensores y tiene la bandeja de alertas aparte", async () => {
+    iniciarSesionComo("Agronomo")
+    renderConProveedores(<AppRouter />, { ruta: "/telemetria/alertas" })
+
+    expect(await screen.findByRole("heading", { name: /Telemetría IoT/i })).toBeInTheDocument()
+    expect(await screen.findByText(/Superó el máximo/i)).toBeInTheDocument()
+  })
+
+  it("el Capataz no entra a Telemetría", async () => {
+    iniciarSesionComo("Capataz")
+    renderConProveedores(<AppRouter />, { ruta: "/telemetria" })
+
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+  })
+
   it("una ruta inexistente muestra el 404", async () => {
     iniciarSesionComo("Propietario")
     renderConProveedores(<AppRouter />, { ruta: "/no-existe" })
