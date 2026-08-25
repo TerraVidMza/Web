@@ -10,6 +10,28 @@ Qué hay que cambiar en este repositorio para que funcione contra el backend tal
 
 ---
 
+## Estado de ejecución
+
+> Actualizado al cerrar los pasos 1 a 8. Los siete rompimientos de la §1 están corregidos y verificados con tests que fallan contra el código anterior.
+
+| # | Trabajo | Estado | Dónde quedó |
+|---|---|---|---|
+| **1** | Capa de contrato con zod | ✅ | `src/api/` — `schemas/` (tipos derivados con `z.infer`), `endpoints/`, `request.ts` |
+| **2** | B2 (`empresaId`) y B1 (envelope) | ✅ | `endpoints/fincas.ts`, `endpoints/usuarios.ts`, `schemas/comunes.ts#paginado` |
+| **3** | B3 (dashboard por rol) y B6 (permisos) | ✅ | `schemas/dashboard.ts` (unión discriminada), `src/auth/permisos.ts` |
+| **4** | B5 (contraseñas) | ✅ | `features/auth/` — cambio obligado, recuperación, reset, alta sin password |
+| **5** | B7 (401 sin recargar, reintento de logout) | ✅ | `api/client.ts#registrarManejadorDeSesionExpirada`, `context/auth-context.tsx` |
+| **6** | Primitivas de UI | ✅ | `components/datos/` y `components/formulario/` |
+| **7** | Pantalla del Auditor (HU-07) | ✅ | `features/auditoria/` |
+| **8** | Notificaciones (HU-35) | ✅ | `features/notificaciones/` — campana con `noLeidas` y pantalla completa |
+| **9** | Módulos restantes | ⬜ | Pendiente. Los cimientos que necesitan ya están. |
+
+**B4 (decimales como string)** se cierra de raíz en `schemas/comunes.ts#decimal`, que acepta los dos formatos —string desde la entidad, número desde el SQL— y rechaza el string vacío para que un campo sin cargar no se vuelva un cero creíble.
+
+El bug del backend de la §5 (`GET /catalogos` sin `tipo` devuelve 500) **sigue abierto**: es del otro repositorio. Desde acá, `endpoints/catalogos.ts` hace el parámetro obligatorio en la firma para que no se pueda omitir por accidente, y el handler de MSW lo reproduce.
+
+---
+
 ## 1. Lo que ya está roto
 
 Ordenado por gravedad: primero lo que rompe pantallas que hoy se usan.
@@ -327,17 +349,36 @@ Los pasos 1 a 5 son los que hacen que lo que ya existe funcione. **De ahí hacia
 
 ---
 
-## 5. Un bug del backend, encontrado en el camino
+## 5. Bugs del backend encontrados auditando esto — ✅ corregidos
 
-`GET /api/catalogos` **sin el parámetro `tipo` devuelve 500**, para cualquier rol:
+Buscar el patrón de un `@Query()` sin validar destapó nueve parámetros crudos en seis controllers del backend, con tres modos de falla. **Ya están arreglados** (rama `fix/query-params-sin-validar`), pero quedan documentados acá porque dos afectan directamente a pantallas de este plan.
+
+### El que sí importa para el Web: un filtro booleano invertido
+
+`GET /usuarios?activo=false` devolvía los usuarios **activos**. Verificado con un inactivo en la base: traía las 9 filas activas y ninguna inactiva. Lo mismo en `/notificaciones?soloNoLeidas=` y `/cuarteles/buscar?activo=`.
+
+La causa vale conocerla, porque es la misma familia que W1 de este repo: los tres DTO tenían un `@Transform` escrito justamente para evitarlo, y no funcionaba. El backend corre con `enableImplicitConversion: true`, y esa conversión se aplica **antes** del `@Transform`: miraba el tipo declarado (`boolean`) y hacía `Boolean('false')`, que es `true`. Una validación que se lee correcta en el código y la derrota una opción del framework.
+
+**Por qué importa acá:** el paso 4 del orden de trabajo es completar Fincas, Cuarteles y Usuarios con sus filtros. El filtro "ver inactivos" habría devuelto lo contrario de lo pedido, y desde el frontend eso se ve como un bug del frontend.
+
+### Los otros
+
+Dos devolvían **500** a una entrada inválida del cliente:
 
 ```
-GET /api/catalogos              -> HTTP 500
-GET /api/catalogos?tipo=variedad -> HTTP 200
+GET /api/catalogos                        → 500  (tipo ausente llegaba al where)
+GET /api/…/correlacion/:id?desde=basura   → 500  (la cadena llegaba al SQL)
 ```
 
-`@Query('tipo') tipo: CatalogoTipo` no tiene validación, así que `undefined` llega hasta el `where` de TypeORM y explota abajo. Todos los demás listados validan su query con un DTO; este toma el parámetro crudo.
+Y cuatro devolvían **200 con una lista vacía**, que para un cliente es peor: no hay forma de distinguir "escribí mal el parámetro" de "no hay datos", así que un typo se investiga en la base.
 
-No afecta a este repo hoy —`useCatalogo(tipo)` siempre lo manda— pero es un 500 a un error de cliente, y un tipo mal escrito en el futuro daría una caída en vez de un 400 con mensaje.
+```
+GET /api/catalogos?tipo=basura            → 200 []
+GET /api/ayuda/articulos?modulo=vendmia   → 200 []
+GET /api/…/correlacion/:id (sin fechas)   → 200 "No hay suficientes datos"
+GET /api/usuarios?activo=basura           → 200, interpretado como true
+```
 
-**Arreglo (en el Backend, chico):** un `ListarCatalogoDto` con `@IsEnum(CatalogoTipo)` sobre `tipo` y `@IsBooleanString()` sobre `incluirInactivos`. Reportado acá para que no se pierda; no bloquea nada de este plan.
+El de la correlación es el más engañoso: parece un veredicto agronómico sobre el cuartel cuando en realidad nadie mandó el período a analizar.
+
+**Los siete ahora son 400** con un mensaje que dice qué se espera (`tipo debe ser uno de: variedad, sistema_conduccion, …`), así que el frontend puede mostrarlo tal cual. Y el filtro global del backend traduce los códigos `22007`/`22P02` de PostgreSQL a 400, de modo que un parámetro mal formado que se escape de un DTO en el futuro cueste un 400 y no una caída.
