@@ -10,6 +10,28 @@ Qué hay que cambiar en este repositorio para que funcione contra el backend tal
 
 ---
 
+## Estado de ejecución
+
+> Actualizado al cerrar los pasos 1 a 8. Los siete rompimientos de la §1 están corregidos y verificados con tests que fallan contra el código anterior.
+
+| # | Trabajo | Estado | Dónde quedó |
+|---|---|---|---|
+| **1** | Capa de contrato con zod | ✅ | `src/api/` — `schemas/` (tipos derivados con `z.infer`), `endpoints/`, `request.ts` |
+| **2** | B2 (`empresaId`) y B1 (envelope) | ✅ | `endpoints/fincas.ts`, `endpoints/usuarios.ts`, `schemas/comunes.ts#paginado` |
+| **3** | B3 (dashboard por rol) y B6 (permisos) | ✅ | `schemas/dashboard.ts` (unión discriminada), `src/auth/permisos.ts` |
+| **4** | B5 (contraseñas) | ✅ | `features/auth/` — cambio obligado, recuperación, reset, alta sin password |
+| **5** | B7 (401 sin recargar, reintento de logout) | ✅ | `api/client.ts#registrarManejadorDeSesionExpirada`, `context/auth-context.tsx` |
+| **6** | Primitivas de UI | ✅ | `components/datos/` y `components/formulario/` |
+| **7** | Pantalla del Auditor (HU-07) | ✅ | `features/auditoria/` |
+| **8** | Notificaciones (HU-35) | ✅ | `features/notificaciones/` — campana con `noLeidas` y pantalla completa |
+| **9** | Módulos restantes | ⬜ | Pendiente. Los cimientos que necesitan ya están. |
+
+**B4 (decimales como string)** se cierra de raíz en `schemas/comunes.ts#decimal`, que acepta los dos formatos —string desde la entidad, número desde el SQL— y rechaza el string vacío para que un campo sin cargar no se vuelva un cero creíble.
+
+El bug del backend de la §5 (`GET /catalogos` sin `tipo` devuelve 500) **sigue abierto**: es del otro repositorio. Desde acá, `endpoints/catalogos.ts` hace el parámetro obligatorio en la firma para que no se pueda omitir por accidente, y el handler de MSW lo reproduce.
+
+---
+
 ## 1. Lo que ya está roto
 
 Ordenado por gravedad: primero lo que rompe pantallas que hoy se usan.
