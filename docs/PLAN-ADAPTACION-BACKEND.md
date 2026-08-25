@@ -327,17 +327,36 @@ Los pasos 1 a 5 son los que hacen que lo que ya existe funcione. **De ahí hacia
 
 ---
 
-## 5. Un bug del backend, encontrado en el camino
+## 5. Bugs del backend encontrados auditando esto — ✅ corregidos
 
-`GET /api/catalogos` **sin el parámetro `tipo` devuelve 500**, para cualquier rol:
+Buscar el patrón de un `@Query()` sin validar destapó nueve parámetros crudos en seis controllers del backend, con tres modos de falla. **Ya están arreglados** (rama `fix/query-params-sin-validar`), pero quedan documentados acá porque dos afectan directamente a pantallas de este plan.
+
+### El que sí importa para el Web: un filtro booleano invertido
+
+`GET /usuarios?activo=false` devolvía los usuarios **activos**. Verificado con un inactivo en la base: traía las 9 filas activas y ninguna inactiva. Lo mismo en `/notificaciones?soloNoLeidas=` y `/cuarteles/buscar?activo=`.
+
+La causa vale conocerla, porque es la misma familia que W1 de este repo: los tres DTO tenían un `@Transform` escrito justamente para evitarlo, y no funcionaba. El backend corre con `enableImplicitConversion: true`, y esa conversión se aplica **antes** del `@Transform`: miraba el tipo declarado (`boolean`) y hacía `Boolean('false')`, que es `true`. Una validación que se lee correcta en el código y la derrota una opción del framework.
+
+**Por qué importa acá:** el paso 4 del orden de trabajo es completar Fincas, Cuarteles y Usuarios con sus filtros. El filtro "ver inactivos" habría devuelto lo contrario de lo pedido, y desde el frontend eso se ve como un bug del frontend.
+
+### Los otros
+
+Dos devolvían **500** a una entrada inválida del cliente:
 
 ```
-GET /api/catalogos              -> HTTP 500
-GET /api/catalogos?tipo=variedad -> HTTP 200
+GET /api/catalogos                        → 500  (tipo ausente llegaba al where)
+GET /api/…/correlacion/:id?desde=basura   → 500  (la cadena llegaba al SQL)
 ```
 
-`@Query('tipo') tipo: CatalogoTipo` no tiene validación, así que `undefined` llega hasta el `where` de TypeORM y explota abajo. Todos los demás listados validan su query con un DTO; este toma el parámetro crudo.
+Y cuatro devolvían **200 con una lista vacía**, que para un cliente es peor: no hay forma de distinguir "escribí mal el parámetro" de "no hay datos", así que un typo se investiga en la base.
 
-No afecta a este repo hoy —`useCatalogo(tipo)` siempre lo manda— pero es un 500 a un error de cliente, y un tipo mal escrito en el futuro daría una caída en vez de un 400 con mensaje.
+```
+GET /api/catalogos?tipo=basura            → 200 []
+GET /api/ayuda/articulos?modulo=vendmia   → 200 []
+GET /api/…/correlacion/:id (sin fechas)   → 200 "No hay suficientes datos"
+GET /api/usuarios?activo=basura           → 200, interpretado como true
+```
 
-**Arreglo (en el Backend, chico):** un `ListarCatalogoDto` con `@IsEnum(CatalogoTipo)` sobre `tipo` y `@IsBooleanString()` sobre `incluirInactivos`. Reportado acá para que no se pierda; no bloquea nada de este plan.
+El de la correlación es el más engañoso: parece un veredicto agronómico sobre el cuartel cuando en realidad nadie mandó el período a analizar.
+
+**Los siete ahora son 400** con un mensaje que dice qué se espera (`tipo debe ser uno de: variedad, sistema_conduccion, …`), así que el frontend puede mostrarlo tal cual. Y el filtro global del backend traduce los códigos `22007`/`22P02` de PostgreSQL a 400, de modo que un parámetro mal formado que se escape de un DTO en el futuro cueste un 400 y no una caída.
