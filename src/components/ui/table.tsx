@@ -67,7 +67,12 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
+    // `scope="col"` por defecto: sin él un lector de pantalla no asocia cada
+    // celda con su encabezado y la tabla se lee como una lista de valores
+    // sueltos. Se puede sobrescribir desde `props` para las tablas con
+    // encabezados de fila.
     <th
+      scope="col"
       data-slot="table-head"
       className={cn(
         "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",

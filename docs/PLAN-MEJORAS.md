@@ -8,6 +8,36 @@ Auditoría del frontend completo y plan de trabajo. Complementa el [plan de adap
 
 ---
 
+## Estado de ejecución
+
+> Actualizado al cerrar la Fase 0, la Fase 1 y la Fase 2. **Punto de llegada, medido:** `npm run build` limpio, `npm run lint` con 0 errores y 5 warnings, **64 tests en 13 archivos**, un workflow de CI, y el bundle repartido en chunks por ruta —el inicial pasó de **611 kB a 331 kB**—.
+
+| Problema | Estado | Dónde quedó |
+|---|---|---|
+| **W1** La capa de API afirma en vez de validar | ✅ | `src/api/` con zod; el tipo sale del schema |
+| **W2** Cero tests y cero CI | ✅ | Vitest + RTL + MSW con respuestas reales; `.github/workflows/ci.yml` |
+| **W3** Permisos duplicados tres veces | ✅ | `src/auth/permisos.ts`, única copia; de ahí salen menú, rutas y botones |
+| **W4** Sin primitivas de paginación | ✅ | `components/datos/tabla-paginada.tsx` y `paginacion.tsx` |
+| **W5** Sin convención de carga/error/vacío | ✅ | `components/datos/estado-consulta.tsx`, que distingue vacío de vacío-por-filtro |
+| **W6** Formularios sin reuso, validación divergente | ✅ | `components/formulario/use-formulario-api.ts` y `lib/campos.ts` |
+| **W7** Sin navegación en mobile | ✅ | `<Sheet>` en `layouts/app-layout.tsx` |
+| **W8** Accesibilidad sin verificar | ✅ | `jsx-a11y` en oxlint, `scope`/`caption` en tablas, `aria-live`, foco al primer error, salto al contenido |
+| **W9** Un solo bundle de 611 kB | ✅ | `React.lazy` por ruta; chunk inicial de 331 kB |
+| **W10** Modo oscuro inalcanzable | ✅ | `ThemeProvider` montado + toggle en el header |
+| **W11** Sin validación de entorno ni configuración | ✅ | `config/env.ts` (falla al arrancar) y `context/configuracion-context.tsx` |
+| **W12** Sesión frágil | ✅ | `auth/sesion.ts`: una clave, chequeo de `exp`, sync entre pestañas, `ErrorBoundary`, redirect post-login |
+
+| Fase | Estado |
+|---|---|
+| **Fase 0** — Que lo que existe funcione | ✅ Cerrada |
+| **Fase 1** — Cimientos (F1-1 … F1-7) | ✅ Cerrada |
+| **Fase 2** — Calidad de producto (F2-1 … F2-6) | ✅ Cerrada |
+| **Fase 3** — Los módulos | ⬜ Pendiente, salvo los dos que adelantó el plan de adaptación: **log de auditoría (HU-07)** y **notificaciones (HU-35)**, más **perfil y contraseñas (HU-03, HU-04)** |
+
+Las ocho decisiones de la §6 se tomaron adoptando la recomendación de cada una y quedaron registradas en [`DECISIONS.md`](DECISIONS.md).
+
+---
+
 ## 1. Los 12 problemas sistémicos
 
 Igual que en el backend, la mayoría de lo que falta **no es de una pantalla sino transversal**. Arreglar estos doce cierra defectos en todas las pantallas a la vez, incluidas las que todavía no existen. Ir pantalla por pantalla sale mucho más caro y deja el mismo agujero abierto en cada una nueva.

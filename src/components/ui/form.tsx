@@ -26,10 +26,20 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 )
 
+/**
+ * `TTransformedValues` se reenvía a `ControllerProps`.
+ *
+ * El componente que genera shadcn declara solo dos genéricos, así que el
+ * tercero cae al default `TFieldValues` y el `control` de un formulario cuyo
+ * schema **transforma** —el nuestro: los `<input>` devuelven strings y el
+ * backend espera números— deja de ser asignable. Sin este parámetro no hay
+ * forma de usar `z.transform()` con este `<FormField>`.
+ */
 function FormField<
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->({ ...props }: ControllerProps<TFieldValues, TName>) {
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  TTransformedValues = TFieldValues
+>({ ...props }: ControllerProps<TFieldValues, TName, TTransformedValues>) {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />

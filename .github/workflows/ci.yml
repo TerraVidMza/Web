@@ -1,0 +1,46 @@
+name: CI
+
+# Nada impedía que un PR rompiera el login: no había workflows (W2). Estas tres
+# comprobaciones son las mismas que corren en local, para que "en mi máquina
+# anda" deje de ser una respuesta posible.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Tipos, lint y tests
+    runs-on: ubuntu-latest
+    env:
+      # `src/config/env.ts` falla al arrancar si no está: es deliberado, para
+      # que un `.env` mal escrito no se descubra recién en producción.
+      VITE_API_URL: http://localhost:3000/api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # La version sale de `.nvmrc`, no de un literal acá: cuando estaban en dos
+      # lugares, el CI corria en Node 20 mientras las dependencias de test
+      # pedian 22+, y el desajuste solo se veia como un fallo de `npm test`.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipos y build
+        run: npm run build
+
+      - name: Tests
+        run: npm run test
