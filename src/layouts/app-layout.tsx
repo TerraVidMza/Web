@@ -43,8 +43,9 @@ function Navegacion({ alNavegar }: { alNavegar?: () => void }) {
   )
 }
 
-/** `variante="claro"` para fondos oscuros (sidebar, drawer mobile). */
-function Marca({ variante = "oscuro" }: { variante?: "oscuro" | "claro" }) {
+/** `variante="claro"` para fondos siempre oscuros (sidebar, drawer mobile); el
+ *  default sigue el tema activo (header mobile, cuyo fondo cambia con el tema). */
+function Marca({ variante = "auto" }: { variante?: "auto" | "oscuro" | "claro" }) {
   const { nombreOrganizacion } = useFormato()
   return (
     <div className="flex items-center gap-2">

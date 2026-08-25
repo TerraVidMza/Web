@@ -52,7 +52,6 @@ export function LoginPage() {
 
   return (
     <MarcoAuth
-      titulo="TerraVid"
       descripcion="Ingresá con tu cuenta para continuar"
       logoGrande
       pie={
