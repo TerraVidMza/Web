@@ -49,13 +49,20 @@ La app queda disponible en `http://localhost:5173`.
 | `/fincas` | Fincas | Conectada — ABM |
 | `/fincas/:fincaId/cuarteles` | Cuarteles | Conectada — ABM |
 | `/usuarios` (solo Propietario) | Usuarios | Conectada — ABM |
-| `/configuracion` (solo Propietario) | Configuración | Conectada |
+| `/configuracion` (solo Propietario) | Configuración | Placeholder — pendiente conectar a `GET/PUT /configuracion` |
 | `/operaciones` | Operaciones | Placeholder — pendiente conectar a labores/insumos/costos |
 | `/telemetria` | Telemetría IoT | Placeholder — pendiente conectar a sensores/lecturas/alertas |
 | `/vendimia` | Vendimia | Placeholder — pendiente conectar a cuadrillas/pesajes/remitos |
 | `/ayuda` | Ayuda | Placeholder — pendiente manual/FAQs |
 
 El acceso por rol se controla en `src/routes/protected-route.tsx` (`ProtectedRoute` exige sesión; `RoleRoute` restringe por rol).
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [`docs/PLAN-ADAPTACION-BACKEND.md`](docs/PLAN-ADAPTACION-BACKEND.md) | Qué hay que cambiar para funcionar contra el backend actual, verificado contra la API corriendo. Incluye el inventario de endpoints disponibles por HU. |
+| [`docs/PLAN-MEJORAS.md`](docs/PLAN-MEJORAS.md) | Auditoría del frontend, los 12 problemas transversales, las fases de trabajo y las decisiones pendientes. |
 
 ## Contribuir
 
