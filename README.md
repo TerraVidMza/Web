@@ -100,7 +100,11 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/operaciones/tipos-labor` | Tipos de labor | Conectada — ABM con versionado de costos (HU-16) |
 | `/cuarteles/:cuartelId/historial` | Historial de operaciones | Conectada — paginado; también accesible al Auditor (HU-17) |
 | `/telemetria` (Propietario, Agrónomo) | Telemetría IoT | Placeholder — pendiente conectar a sensores/lecturas/alertas |
-| `/vendimia` (Propietario, Agrónomo, Capataz) | Vendimia | Placeholder — pendiente conectar a cuadrillas/pesajes/remitos |
+| `/vendimia` (Propietario, Agrónomo, Capataz) | Remitos | Conectada — bandeja de aprobación, aprobar y rechazar con motivo (HU-27) |
+| `/vendimia/cosecha` | Estado de cosecha | Conectada — avance por cuartel y rendimiento (HU-28) |
+| `/vendimia/cuadrillas` | Cuadrillas | Conectada — ABM con versionado de tarifas (HU-23) |
+| `/remitos/:remitoId` | Detalle del remito | Conectada — imprimible, con la liquidación de bodega (HU-27) |
+| `/cuarteles/:cuartelId/pesajes` | Pesajes del cuartel | Conectada — solo lectura (HU-26) |
 | `/configuracion` (Propietario) | Configuración | Placeholder — pendiente conectar a `GET/PUT /configuracion` |
 | `/ayuda` | Ayuda | Placeholder — pendiente manual/FAQs |
 
@@ -108,7 +112,7 @@ El acceso por rol sale de una sola tabla, [`src/auth/permisos.ts`](src/auth/perm
 
 ## Qué falta
 
-Los bloques 6 a 10 de la Fase 3 del plan de mejoras: Vendimia (HU-23, 26, 27, 28), Telemetría (18, 20, 21, 22), Inteligencia agronómica (29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+Los bloques 7 a 10 de la Fase 3 del plan de mejoras: Telemetría (HU-18, 20, 21, 22), Inteligencia agronómica (29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
 
 Dos límites que vienen del backend y conviene tener presentes:
 
@@ -116,6 +120,7 @@ Dos límites que vienen del backend y conviene tener presentes:
 - **`GET /configuracion` es solo del Propietario**, así que los demás roles ven la moneda y las unidades por defecto. Ver [`docs/DECISIONS.md`](docs/DECISIONS.md), W-004.
 - **El Auditor no puede descubrir cuarteles por la API.** HU-17 le concede el historial de operaciones por cuartel, pero `GET /cuarteles`, `/cuarteles/buscar` y `/cuarteles/:id` son `@Roles(Propietario, Agrónomo, Capataz)`, así que no tiene de dónde sacar un `cuartelId`. Mientras eso siga así, su única vía de entrada es el enlace que el log de auditoría muestra en los eventos sobre cuarteles.
 - **El listado de insumos y tipos de labor no trae el costo vigente**: vive en `/:id/costos`. Se consulta al abrir el diálogo de costos, para no disparar N+1 requests al dibujar la tabla.
+- **Los remitos y las liquidaciones son dos cosas distintas.** El `totalLiquidacion` de un remito es lo que se le paga a la cuadrilla por cosechar —un costo—; el ingreso del sistema es la liquidación de bodega, que se carga aparte sobre un remito aprobado. Sin ella, el margen bruto del costeo figura como desconocido, no como cero.
 
 ## Documentación
 

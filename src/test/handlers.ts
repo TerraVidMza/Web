@@ -3,10 +3,16 @@ import type { RolNombre } from "@/auth/roles"
 import {
   CATALOGOS,
   COSTEO,
+  CUADRILLAS,
   COSTOS_INSUMO,
   IDS,
+  ESTADO_COSECHA,
   INSUMOS_CATALOGO,
+  LIQUIDACION,
+  PESAJES,
   REGISTROS_LABOR,
+  REMITOS,
+  TARIFAS,
   TIPOS_LABOR_CATALOGO,
   CONFIGURACION,
   CUARTELES,
@@ -481,6 +487,167 @@ export const handlers = [
   http.patch(`${API}/tipos-labor/:id/desactivar`, () =>
     HttpResponse.json({ ...TIPOS_LABOR_CATALOGO[0], activo: false })
   ),
+
+  // ─── Vendimia (HU-23, 26, 27, 28) ──────────────────────────────────────────
+
+  http.get(`${API}/remitos`, ({ request }) => {
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    if (!permitidos.includes(rolActual)) return prohibido("/api/remitos")
+    const params = new URL(request.url).searchParams
+    const estado = params.get("estado")
+    const filas = estado ? REMITOS.filter((r) => r.estado === estado) : REMITOS
+    return HttpResponse.json(paginar(filas, Number(params.get("page") ?? 1)))
+  }),
+
+  http.get(`${API}/remitos/:id/liquidacion`, ({ params }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) {
+      return prohibido("/api/remitos/liquidacion")
+    }
+    // `null` cuando todavia no se cargo: es lo que deja el margen bruto en
+    // "desconocido" en vez de en cero.
+    return HttpResponse.json(params.id === IDS.remitoAprobado ? LIQUIDACION : null)
+  }),
+
+  http.put(`${API}/remitos/:id/liquidacion`, async ({ params, request }) => {
+    const body = (await request.json()) as {
+      kgAceptados: number
+      precioPorKg: number
+      descuentos?: number
+      bodega: string
+      fecha: string
+    }
+    const neto = body.kgAceptados * body.precioPorKg - (body.descuentos ?? 0)
+    if (neto < 0) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/remitos/liquidacion",
+          timestamp: new Date().toISOString(),
+          message: "Los descuentos no pueden superar el importe bruto de la liquidación.",
+        },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json({
+      ...LIQUIDACION,
+      remitoId: String(params.id),
+      bodega: body.bodega,
+      kgAceptados: body.kgAceptados.toFixed(2),
+      precioPorKg: body.precioPorKg.toFixed(4),
+      descuentos: (body.descuentos ?? 0).toFixed(2),
+      montoNeto: neto.toFixed(2),
+      fecha: body.fecha,
+    })
+  }),
+
+  http.get(`${API}/remitos/:id`, ({ params }) => {
+    const remito = REMITOS.find((r) => r.id === params.id)
+    if (!remito) {
+      return HttpResponse.json(
+        { statusCode: 404, message: "Remito no encontrado" },
+        { status: 404 }
+      )
+    }
+    return HttpResponse.json({ ...remito, pesajes: PESAJES })
+  }),
+
+  http.post(`${API}/remitos/generar-borrador`, async ({ request }) => {
+    const body = (await request.json()) as { cuartelId: string; fecha?: string }
+    if (!body.fecha) {
+      return HttpResponse.json(
+        { statusCode: 400, message: "fecha es obligatoria" },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json({ ...REMITOS[0], fecha: body.fecha }, { status: 201 })
+  }),
+
+  http.post(`${API}/remitos/:id/aprobar`, ({ params }) =>
+    conRoles(["Propietario", "Agronomo"], "/api/remitos/aprobar", () => ({
+      ...REMITOS[0],
+      id: String(params.id),
+      estado: "aprobado",
+      aprobadoPorId: IDS.propietario,
+      fechaAprobacion: new Date().toISOString(),
+    }))
+  ),
+
+  /** `@Length(10, 500)`: el motivo es la unica explicacion que ve el Capataz. */
+  http.post(`${API}/remitos/:id/rechazar`, async ({ params, request }) => {
+    const body = (await request.json()) as { motivoRechazo?: string }
+    if (!body.motivoRechazo || body.motivoRechazo.length < 10) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/remitos/rechazar",
+          timestamp: new Date().toISOString(),
+          message: ["motivoRechazo must be longer than or equal to 10 characters"],
+        },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json({
+      ...REMITOS[0],
+      id: String(params.id),
+      estado: "rechazado",
+      motivoRechazo: body.motivoRechazo,
+      rechazadoPorId: IDS.propietario,
+      fechaRechazo: new Date().toISOString(),
+    })
+  }),
+
+  http.get(`${API}/pesajes-vendimia/finca/:fincaId/estado-cosecha`, () =>
+    conRoles(
+      ["Propietario", "Agronomo", "Capataz"],
+      "/api/pesajes-vendimia/estado-cosecha",
+      () => ESTADO_COSECHA
+    )
+  ),
+
+  http.get(`${API}/pesajes-vendimia/cuartel/:cuartelId`, ({ request }) => {
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    if (!permitidos.includes(rolActual)) return prohibido("/api/pesajes-vendimia/cuartel")
+    const params = new URL(request.url).searchParams
+    return HttpResponse.json(paginar(PESAJES, Number(params.get("page") ?? 1)))
+  }),
+
+  http.get(`${API}/cuadrillas/:id/tarifas`, () =>
+    conRoles(["Propietario", "Agronomo"], "/api/cuadrillas/tarifas", () => TARIFAS)
+  ),
+
+  http.get(`${API}/cuadrillas`, () =>
+    conRoles(["Propietario", "Agronomo", "Capataz"], "/api/cuadrillas", () => CUADRILLAS)
+  ),
+
+  http.post(`${API}/cuadrillas`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CUADRILLAS[0], ...body }, { status: 201 })
+  }),
+
+  http.patch(`${API}/cuadrillas/:id`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CUADRILLAS[0], ...body })
+  }),
+
+  http.patch(`${API}/cuadrillas/:id/desactivar`, () =>
+    HttpResponse.json({ ...CUADRILLAS[0], activa: false })
+  ),
+
+  http.post(`${API}/cuadrillas/:id/tarifas`, async ({ request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/cuadrillas/tarifas")
+    const body = (await request.json()) as { tarifaPorKg: number; validFrom: string }
+    return HttpResponse.json(
+      {
+        id: "f9333333-3333-4333-8333-333333333333",
+        cuadrillaId: IDS.cuadrilla,
+        tarifaPorKg: body.tarifaPorKg.toFixed(4),
+        validFrom: body.validFrom,
+        createdById: IDS.propietario,
+        createdAt: new Date().toISOString(),
+      },
+      { status: 201 }
+    )
+  }),
 
   http.get(`${API}/configuracion`, () =>
     conRoles(["Propietario"], "/api/configuracion", () => CONFIGURACION)

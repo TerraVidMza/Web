@@ -104,6 +104,31 @@ describe("AppRouter", () => {
     ).toBeInTheDocument()
   })
 
+  it("Vendimia abre en remitos y cada vista tiene su ruta", async () => {
+    iniciarSesionComo("Capataz")
+    renderConProveedores(<AppRouter />, { ruta: "/vendimia/cuadrillas" })
+
+    expect(await screen.findByRole("heading", { name: "Vendimia" })).toBeInTheDocument()
+    expect(await screen.findByText(/Elegí una finca para ver sus cuadrillas/i)).toBeInTheDocument()
+  })
+
+  it("el detalle del remito vive fuera del layout de pestañas, para imprimirlo", async () => {
+    iniciarSesionComo("Propietario")
+    renderConProveedores(<AppRouter />, { ruta: `/remitos/${IDS.remitoBorrador}` })
+
+    expect(await screen.findByRole("heading", { name: "REM-2026-00012" })).toBeInTheDocument()
+    // Sin las pestañas de Vendimia alrededor.
+    expect(screen.queryByRole("navigation", { name: /vistas de vendimia/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /imprimir/i })).toBeInTheDocument()
+  })
+
+  it("el Auditor no entra a Vendimia", async () => {
+    iniciarSesionComo("Auditor")
+    renderConProveedores(<AppRouter />, { ruta: "/vendimia" })
+
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+  })
+
   it("una ruta inexistente muestra el 404", async () => {
     iniciarSesionComo("Propietario")
     renderConProveedores(<AppRouter />, { ruta: "/no-existe" })

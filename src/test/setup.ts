@@ -1,8 +1,16 @@
 import "@testing-library/jest-dom/vitest"
 import { afterAll, afterEach, beforeAll, vi } from "vitest"
-import { cleanup } from "@testing-library/react"
+import { cleanup, configure } from "@testing-library/react"
 import { setupServer } from "msw/node"
 import { handlers, reiniciarSesionDePrueba } from "./handlers"
+
+/**
+ * El `findBy*` por defecto corta a 1 s, y las pantallas que entran por el
+ * router cargan su chunk con `React.lazy`: en la primera corrida Vitest lo
+ * transforma al vuelo y eso solo ya se come el presupuesto. El síntoma era una
+ * flakiness que cambiaba de test en cada corrida, no un fallo real.
+ */
+configure({ asyncUtilTimeout: 5000 })
 
 export const servidor = setupServer(...handlers)
 
