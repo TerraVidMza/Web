@@ -1,5 +1,6 @@
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { MoreHorizontal, Pencil, Power } from "lucide-react"
+import { History, MoreHorizontal, Pencil, Power } from "lucide-react"
 import { useDesactivarCuartel } from "./use-cuarteles"
 import { CuartelDialog } from "./cuartel-dialog"
 import type { Cuartel } from "@/api/schemas/cuartel"
@@ -25,8 +26,9 @@ export function AccionesCuartel({ cuartel }: { cuartel: Cuartel }) {
   const desactivar = useDesactivarCuartel()
   const puedeEditar = puede(user?.rol, "cuartelesEscritura")
   const puedeDarDeBaja = puede(user?.rol, "cuartelesBaja")
+  const puedeVerHistorial = puede(user?.rol, "historialLabores")
 
-  if (!puedeEditar && !puedeDarDeBaja) return null
+  if (!puedeEditar && !puedeDarDeBaja && !puedeVerHistorial) return null
 
   return (
     <DropdownMenu>
@@ -36,6 +38,15 @@ export function AccionesCuartel({ cuartel }: { cuartel: Cuartel }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {puedeVerHistorial && (
+          <DropdownMenuItem asChild>
+            <Link to={`/cuarteles/${cuartel.id}/historial`}>
+              <History className="size-4" aria-hidden="true" />
+              Ver historial
+            </Link>
+          </DropdownMenuItem>
+        )}
+
         {puedeEditar && (
           <CuartelDialog fincaId={cuartel.fincaId} cuartel={cuartel}>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>

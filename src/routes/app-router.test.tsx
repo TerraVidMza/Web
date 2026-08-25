@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { AppRouter } from "./app-router"
+import { IDS } from "@/test/fixtures"
 import { iniciarSesionComo, renderConProveedores, screen } from "@/test/utils"
 
 /**
@@ -72,6 +73,35 @@ describe("AppRouter", () => {
     renderConProveedores(<AppRouter />, { ruta: "/cuarteles" })
 
     expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+  })
+
+  it("Operaciones abre en el costeo y tiene una ruta por vista", async () => {
+    iniciarSesionComo("Agronomo")
+    renderConProveedores(<AppRouter />, { ruta: "/operaciones/insumos" })
+
+    // Cada vista tiene URL propia para poder compartir el enlace del catálogo
+    // sin explicar en qué pestaña hay que hacer clic.
+    expect(await screen.findByRole("heading", { name: "Operaciones" })).toBeInTheDocument()
+    expect(await screen.findByRole("button", { name: /nuevo insumo/i })).toBeInTheDocument()
+  })
+
+  it("el Capataz no entra a Operaciones, que es dato económico", async () => {
+    iniciarSesionComo("Capataz")
+    renderConProveedores(<AppRouter />, { ruta: "/operaciones" })
+
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+  })
+
+  it("el Auditor sí entra al historial de un cuartel, con su permiso propio", async () => {
+    iniciarSesionComo("Auditor")
+    renderConProveedores(<AppRouter />, {
+      ruta: `/cuarteles/${IDS.cuartel}/historial`,
+    })
+
+    // HU-17 le concede el historial aunque no pueda listar cuarteles.
+    expect(
+      await screen.findByRole("heading", { name: /Historial de operaciones/i })
+    ).toBeInTheDocument()
   })
 
   it("una ruta inexistente muestra el 404", async () => {

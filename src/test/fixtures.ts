@@ -29,6 +29,9 @@ export const IDS = {
   cuartel: "c1111111-1111-4111-8111-111111111111",
   variedad: "d1111111-1111-4111-8111-111111111111",
   sistema: "d2222222-2222-4222-8222-222222222222",
+  insumo: "e1111111-1111-4111-8111-111111111111",
+  tipoLabor: "e2222222-2222-4222-8222-222222222222",
+  registroLabor: "e3333333-3333-4333-8333-333333333333",
 } as const
 
 /**
@@ -216,6 +219,26 @@ export const LOG_AUDITORIA = [
       rol: ROLES[0],
     },
   },
+  // Un evento sobre un cuartel: es la unica via de entrada del Auditor al
+  // historial de operaciones, porque no puede listar cuarteles. Un solo campo
+  // cambiado, para no chocar con la asercion de "2 campos" del otro evento.
+  {
+    id: "b2222222-2222-4222-8222-222222222222",
+    actorId: IDS.agronomo,
+    accion: "ACTUALIZAR_CUARTEL",
+    entidad: "cuartel",
+    entidadId: IDS.cuartel,
+    datosAnteriores: { nombre: "Cuartel 1" },
+    datosNuevos: { nombre: "Cuartel 1 Norte" },
+    ipAddress: null,
+    createdAt: "2026-08-24T16:00:00.000Z",
+    actor: {
+      id: IDS.agronomo,
+      nombre: "Bruno Agronomo",
+      email: "bruno.agronomo@terravid.demo",
+      rol: ROLES[1],
+    },
+  },
 ]
 
 /**
@@ -310,5 +333,161 @@ export const CONFIGURACION = [
     valor: "********",
     updatedById: IDS.propietario,
     updatedAt: "2026-01-10T12:00:00.000Z",
+  },
+]
+
+
+// ─── Operaciones (HU-15, 16, 17) ─────────────────────────────────────────────
+
+export const INSUMOS_CATALOGO = [
+  {
+    id: IDS.insumo,
+    empresaId: EMPRESA_ID,
+    nombre: "Fertilizante NPK",
+    descripcion: "Mezcla 15-15-15",
+    unidadMedida: "kg",
+    activo: true,
+    createdAt: "2026-01-12T12:00:00.000Z",
+    updatedAt: null,
+  },
+]
+
+export const TIPOS_LABOR_CATALOGO = [
+  {
+    id: IDS.tipoLabor,
+    empresaId: EMPRESA_ID,
+    nombre: "Poda de invierno",
+    descripcion: null,
+    unidadMedida: "jornal",
+    activo: true,
+    createdAt: "2026-01-12T12:00:00.000Z",
+    updatedAt: null,
+  },
+]
+
+/**
+ * `costoUnitario` es `decimal(12,2)`: llega como **string**.
+ *
+ * El tercero tiene vigencia en 2099 a propósito: el backend ordena el historial
+ * por `validFrom` DESC, así que un costo futuro encabeza la lista **sin ser el
+ * vigente**. Es el caso que la pantalla tiene que distinguir.
+ */
+export const COSTOS_INSUMO = [
+  {
+    id: "e9333333-3333-4333-8333-333333333333",
+    insumoId: IDS.insumo,
+    costoUnitario: "1800.00",
+    validFrom: "2099-01-01",
+    createdById: IDS.propietario,
+    createdAt: "2026-08-01T12:00:00.000Z",
+  },
+  {
+    id: "e9111111-1111-4111-8111-111111111111",
+    insumoId: IDS.insumo,
+    costoUnitario: "1500.00",
+    validFrom: "2026-06-01",
+    createdById: IDS.propietario,
+    createdAt: "2026-06-01T12:00:00.000Z",
+  },
+  {
+    id: "e9222222-2222-4222-8222-222222222222",
+    insumoId: IDS.insumo,
+    costoUnitario: "1200.00",
+    validFrom: "2026-01-12",
+    createdById: IDS.propietario,
+    createdAt: "2026-01-12T12:00:00.000Z",
+  },
+]
+
+/**
+ * Costeo por cuartel. Acá los números **sí** son números: el service castea
+ * cada agregado con `Number(...)`.
+ *
+ * El segundo cuartel es el caso interesante: sin superficie cargada
+ * (`hectareas: null` -> `costoPorHa: null`) y sin liquidaciones
+ * (`margenBrutoDisponible: false` -> `margenBruto: null`). Los dos `null` son
+ * deliberados y no equivalen a cero.
+ */
+export const COSTEO = {
+  cuarteles: [
+    {
+      cuartelId: IDS.cuartel,
+      cuartelNombre: "Cuartel 1",
+      fincaId: IDS.finca,
+      fincaNombre: "Finca El Rosal",
+      hectareas: 6,
+      costoLabores: 900000,
+      costoInsumos: 300000,
+      costoTotal: 1200000,
+      costoPorHa: 200000,
+      ingresos: 2000000,
+      liquidaciones: 2,
+      margenBruto: 800000,
+      margenBrutoDisponible: true,
+      margenBrutoPorHa: 133333.33,
+    },
+    {
+      cuartelId: "c2222222-2222-4222-8222-222222222222",
+      cuartelNombre: "Cuartel 2",
+      fincaId: IDS.finca,
+      fincaNombre: "Finca El Rosal",
+      hectareas: null,
+      costoLabores: 150000,
+      costoInsumos: 25000,
+      costoTotal: 175000,
+      costoPorHa: null,
+      ingresos: 0,
+      liquidaciones: 0,
+      margenBruto: null,
+      margenBrutoDisponible: false,
+      margenBrutoPorHa: null,
+    },
+  ],
+  totales: {
+    costoLabores: 1050000,
+    costoInsumos: 325000,
+    costoTotal: 1375000,
+    hectareas: 6,
+    costoPorHa: 229166.67,
+    ingresos: 2000000,
+    margenBruto: 625000,
+    margenBrutoDisponible: true,
+  },
+}
+
+/** `cantidad` y `costoUnitarioAlSync` son decimales: llegan como string. */
+export const REGISTROS_LABOR = [
+  {
+    id: IDS.registroLabor,
+    localUuid: "ea111111-1111-4111-8111-111111111111",
+    cuartelId: IDS.cuartel,
+    tipoLaborId: IDS.tipoLabor,
+    usuarioId: IDS.capataz,
+    fecha: "2026-07-15",
+    cantidad: "3.00",
+    costoUnitarioAlSync: "45000.00",
+    estadoSync: "sincronizado",
+    errorMessage: null,
+    inconsistenciaCatalogo: true,
+    createdAtLocal: "2026-07-15T09:00:00.000Z",
+    createdAt: "2026-07-15T21:00:00.000Z",
+    syncedAt: "2026-07-15T21:00:00.000Z",
+    tipoLabor: { id: IDS.tipoLabor, nombre: "Poda de invierno", unidadMedida: "jornal" },
+    usuario: {
+      id: IDS.capataz,
+      nombre: "Carla Capataz",
+      email: "carla.capataz@terravid.demo",
+    },
+    detalles: [
+      {
+        id: "eb111111-1111-4111-8111-111111111111",
+        registroLaborId: IDS.registroLabor,
+        insumoId: IDS.insumo,
+        cantidadUsada: "20.0000",
+        costoUnitarioAlSync: "1200.00",
+        createdAt: "2026-07-15T21:00:00.000Z",
+        insumo: { id: IDS.insumo, nombre: "Fertilizante NPK", unidadMedida: "kg" },
+      },
+    ],
   },
 ]

@@ -19,11 +19,17 @@ describe("AccionesCuartel", () => {
     expect(screen.queryByRole("menuitem", { name: /dar de baja/i })).not.toBeInTheDocument()
   })
 
-  it("el Capataz no ve el menú de acciones", () => {
+  it("el Capataz solo llega al historial: ni editar ni dar de baja", async () => {
     iniciarSesionComo("Capataz")
-    renderConProveedores(<AccionesCuartel cuartel={cuartel} />)
+    const { usuario } = renderConProveedores(<AccionesCuartel cuartel={cuartel} />)
 
-    expect(screen.queryByRole("button", { name: /Acciones de/i })).not.toBeInTheDocument()
+    await usuario.click(screen.getByRole("button", { name: /Acciones de Cuartel 1/i }))
+
+    // HU-17 le concede el historial —acotado a sus propios registros del día—
+    // pero `CuartelesController` lo deja fuera de la escritura.
+    expect(await screen.findByRole("menuitem", { name: /ver historial/i })).toBeInTheDocument()
+    expect(screen.queryByRole("menuitem", { name: /editar/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole("menuitem", { name: /dar de baja/i })).not.toBeInTheDocument()
   })
 
   it("explica por qué no se puede dar de baja un cuartel con registros", async () => {
