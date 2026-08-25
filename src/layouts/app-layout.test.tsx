@@ -23,6 +23,7 @@ describe("Menú por rol", () => {
       "Dashboard",
       "Fincas",
       "Cuarteles",
+      "Mapa",
       "Operaciones",
       "Telemetría IoT",
       "Vendimia",
@@ -48,6 +49,7 @@ describe("Menú por rol", () => {
     for (const prohibida of [
       "Fincas",
       "Cuarteles",
+      "Mapa",
       "Operaciones",
       "Telemetría IoT",
       "Vendimia",

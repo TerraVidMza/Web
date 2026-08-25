@@ -4,6 +4,8 @@ import {
   CATALOGOS,
   COSTEO,
   ALERTAS_PENDIENTES,
+  ARTICULOS,
+  EMPRESA_ID,
   CUADRILLAS,
   COSTOS_INSUMO,
   IDS,
@@ -16,6 +18,7 @@ import {
   SENSORES,
   SERIE,
   TARIFAS,
+  TICKETS,
   UMBRAL,
   TIPOS_LABOR_CATALOGO,
   CONFIGURACION,
@@ -821,6 +824,95 @@ export const handlers = [
       "/api/inteligencia-agronomica/comparar",
       () => COMPARACION
     )
+  ),
+
+  // Configuracion y tablas maestras (HU-33, 34)
+
+  http.put(`${API}/configuracion`, async ({ request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/configuracion")
+    const body = (await request.json()) as { clave: string; valor: string }
+    return HttpResponse.json({
+      empresaId: EMPRESA_ID,
+      clave: body.clave,
+      // El backend vuelve a enmascarar al devolver una clave secreta.
+      valor: body.clave === "smtp_pass" ? "********" : body.valor,
+      updatedById: IDS.propietario,
+      updatedAt: new Date().toISOString(),
+    })
+  }),
+
+  http.post(`${API}/catalogos`, async ({ request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/catalogos")
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json(
+      { ...CATALOGOS.variedad[0], id: "d9111111-1111-4111-8111-111111111111", ...body },
+      { status: 201 }
+    )
+  }),
+
+  http.patch(`${API}/catalogos/:id/desactivar`, ({ params }) =>
+    HttpResponse.json({ ...CATALOGOS.variedad[0], id: params.id, activo: false })
+  ),
+
+  http.patch(`${API}/catalogos/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CATALOGOS.variedad[0], id: params.id, ...body })
+  }),
+
+  /**
+   * El borrado fisico se rechaza si el valor esta en uso, y el mensaje dice en
+   * cuantos registros: es la diferencia entre "sacalo de los formularios" y
+   * "esto nunca debio existir".
+   */
+  http.delete(`${API}/catalogos/:id`, ({ params }) => {
+    if (params.id === IDS.variedad) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: `/api/catalogos/${String(params.id)}`,
+          timestamp: new Date().toISOString(),
+          message:
+            "No es posible eliminar este valor porque está en uso en 3 registro(s) de cuarteles. Puedes desactivarlo para que no aparezca en nuevos formularios.",
+        },
+        { status: 400 }
+      )
+    }
+    return new HttpResponse(null, { status: 200 })
+  }),
+
+  // Ayuda (HU-36)
+
+  http.get(`${API}/ayuda/articulos`, ({ request }) => {
+    const params = new URL(request.url).searchParams
+    let filas = ARTICULOS
+    const tipo = params.get("tipo")
+    if (tipo) filas = filas.filter((a) => a.tipo === tipo)
+    const modulo = params.get("modulo")
+    if (modulo) filas = filas.filter((a) => a.modulo === modulo)
+    return HttpResponse.json(filas)
+  }),
+
+  http.post(`${API}/ayuda/tickets`, async ({ request }) => {
+    const body = (await request.json()) as { modulo: string; descripcion: string }
+    if (body.descripcion.length < 10) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/ayuda/tickets",
+          timestamp: new Date().toISOString(),
+          message: ["descripcion must be longer than or equal to 10 characters"],
+        },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json(
+      { ...TICKETS[0], ...body, emailEnviado: true },
+      { status: 201 }
+    )
+  }),
+
+  http.get(`${API}/ayuda/tickets`, () =>
+    conRoles(["Propietario"], "/api/ayuda/tickets", () => TICKETS)
   ),
 
   http.get(`${API}/configuracion`, () =>
