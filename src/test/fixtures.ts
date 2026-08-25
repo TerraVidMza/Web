@@ -36,6 +36,8 @@ export const IDS = {
   remitoBorrador: "f4444444-4444-4444-8444-444444444444",
   remitoAprobado: "f5555555-5555-4555-8555-555555555555",
   pesaje: "f6666666-6666-4666-8666-666666666666",
+  sensor: "a5111111-1111-4111-8111-111111111111",
+  alerta: "a5222222-2222-4222-8222-222222222222",
 } as const
 
 /**
@@ -654,3 +656,97 @@ export const ESTADO_COSECHA = {
     cuartelesPendientes: 1,
   },
 }
+
+
+// ─── Telemetria (HU-18, 20, 21, 22) ──────────────────────────────────────────
+
+/** `valor` de la ultima lectura viene casteado con `Number(...)`. */
+export const SENSORES = [
+  {
+    id: IDS.sensor,
+    fincaId: IDS.finca,
+    codigo: "SEN-01",
+    tipo: "temperatura",
+    descripcion: "Cabecera norte, a 1,5 m",
+    activo: true,
+    createdAt: "2026-01-20T12:00:00.000Z",
+    ultimaLectura: {
+      valor: 31.4,
+      unidad: "C",
+      sensorTimestamp: "2026-08-25T14:00:00.000Z",
+    },
+  },
+  {
+    id: "a5333333-3333-4333-8333-333333333333",
+    fincaId: IDS.finca,
+    codigo: "SEN-02",
+    tipo: "humedad_suelo",
+    descripcion: null,
+    activo: true,
+    createdAt: "2026-01-20T12:00:00.000Z",
+    // Un nodo dado de alta que todavia no reporto: `null`, no cero.
+    ultimaLectura: null,
+  },
+]
+
+/** `umbralMinimo`/`umbralMaximo` son `decimal(10,4)`: llegan como string. */
+export const UMBRAL = {
+  id: "a5444444-4444-4444-8444-444444444444",
+  sensorId: IDS.sensor,
+  umbralMinimo: "12.0000",
+  umbralMaximo: "32.0000",
+  configuradoPorId: IDS.agronomo,
+  updatedAt: "2026-06-01T12:00:00.000Z",
+}
+
+/** La serie viene agregada en SQL y con los numeros ya casteados. */
+export const SERIE = {
+  granularidad: "hora",
+  zonaHoraria: "America/Argentina/Mendoza",
+  puntos: [
+    {
+      periodo: "2026-08-25T10:00:00.000Z",
+      promedio: 24.5,
+      minimo: 22.1,
+      maximo: 27.3,
+      lecturas: 12,
+    },
+    {
+      periodo: "2026-08-25T11:00:00.000Z",
+      promedio: 29.8,
+      minimo: 27.4,
+      maximo: 33.9,
+      lecturas: 12,
+    },
+    {
+      periodo: "2026-08-25T12:00:00.000Z",
+      promedio: 31.2,
+      minimo: 29.0,
+      maximo: 34.6,
+      lecturas: 11,
+    },
+  ],
+}
+
+/** `valorLectura` y `umbralSuperado` son decimales: strings. */
+export const ALERTAS_PENDIENTES = [
+  {
+    id: IDS.alerta,
+    sensorId: IDS.sensor,
+    tipoAlerta: "umbral_maximo",
+    valorLectura: "34.6000",
+    umbralSuperado: "32.0000",
+    timestampLectura: "2026-08-25T12:40:00.000Z",
+    estado: "pendiente",
+    revisadaPorId: null,
+    revisadaAt: null,
+    createdAt: "2026-08-25T12:40:05.000Z",
+    sensor: {
+      id: IDS.sensor,
+      codigo: "SEN-01",
+      tipo: "temperatura",
+      fincaId: IDS.finca,
+      finca: { id: IDS.finca, nombre: "Finca El Rosal" },
+    },
+  },
+]

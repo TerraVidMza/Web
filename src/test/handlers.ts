@@ -3,6 +3,7 @@ import type { RolNombre } from "@/auth/roles"
 import {
   CATALOGOS,
   COSTEO,
+  ALERTAS_PENDIENTES,
   CUADRILLAS,
   COSTOS_INSUMO,
   IDS,
@@ -12,7 +13,10 @@ import {
   PESAJES,
   REGISTROS_LABOR,
   REMITOS,
+  SENSORES,
+  SERIE,
   TARIFAS,
+  UMBRAL,
   TIPOS_LABOR_CATALOGO,
   CONFIGURACION,
   CUARTELES,
@@ -648,6 +652,90 @@ export const handlers = [
       { status: 201 }
     )
   }),
+
+  // ─── Telemetria (HU-18, 20, 21, 22) ────────────────────────────────────────
+
+  http.get(`${API}/sensores/:id/umbral`, ({ params }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) {
+      return prohibido("/api/sensores/umbral")
+    }
+    // `null` cuando el sensor nunca tuvo umbral configurado.
+    return HttpResponse.json(params.id === IDS.sensor ? UMBRAL : null)
+  }),
+
+  http.put(`${API}/sensores/:id/umbral`, async ({ request }) => {
+    const body = (await request.json()) as {
+      umbralMinimo: number | null
+      umbralMaximo: number | null
+    }
+    return HttpResponse.json({
+      ...UMBRAL,
+      umbralMinimo: body.umbralMinimo === null ? null : body.umbralMinimo.toFixed(4),
+      umbralMaximo: body.umbralMaximo === null ? null : body.umbralMaximo.toFixed(4),
+      // `aviso` es null cuando no hay nada que advertir (HU-21).
+      aviso: null,
+    })
+  }),
+
+  http.get(`${API}/sensores/:id`, ({ params }) => {
+    const sensor = SENSORES.find((s) => s.id === params.id)
+    if (!sensor) {
+      return HttpResponse.json(
+        { statusCode: 404, message: "Sensor no encontrado" },
+        { status: 404 }
+      )
+    }
+    return conRoles(["Propietario", "Agronomo"], "/api/sensores", () => sensor)
+  }),
+
+  http.get(`${API}/sensores`, () =>
+    conRoles(["Propietario", "Agronomo"], "/api/sensores", () => SENSORES)
+  ),
+
+  http.post(`${API}/sensores`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json(
+      { ...SENSORES[0], ...body, ultimaLectura: null },
+      { status: 201 }
+    )
+  }),
+
+  http.patch(`${API}/sensores/:id`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...SENSORES[0], ...body })
+  }),
+
+  http.patch(`${API}/sensores/:id/desactivar`, () =>
+    HttpResponse.json({ ...SENSORES[0], activo: false })
+  ),
+
+  http.get(`${API}/lecturas-iot/sensor/:id/serie`, ({ request }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) {
+      return prohibido("/api/lecturas-iot/serie")
+    }
+    const granularidad = new URL(request.url).searchParams.get("granularidad") ?? "hora"
+    return HttpResponse.json({ ...SERIE, granularidad })
+  }),
+
+  http.get(`${API}/lecturas-iot/sensor/:id`, ({ request }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) {
+      return prohibido("/api/lecturas-iot")
+    }
+    return HttpResponse.json(paginar([], Number(new URL(request.url).searchParams.get("page") ?? 1)))
+  }),
+
+  http.get(`${API}/alertas-iot/pendientes`, () =>
+    conRoles(["Propietario", "Agronomo"], "/api/alertas-iot/pendientes", () => ALERTAS_PENDIENTES)
+  ),
+
+  http.patch(`${API}/alertas-iot/:id/revisar`, () =>
+    HttpResponse.json({
+      ...ALERTAS_PENDIENTES[0],
+      estado: "revisada",
+      revisadaPorId: IDS.propietario,
+      revisadaAt: new Date().toISOString(),
+    })
+  ),
 
   http.get(`${API}/configuracion`, () =>
     conRoles(["Propietario"], "/api/configuracion", () => CONFIGURACION)
