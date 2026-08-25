@@ -37,6 +37,11 @@ const FincasPage = lazy(() =>
 const CuartelesPage = lazy(() =>
   import("@/features/cuarteles/cuarteles-page").then((m) => ({ default: m.CuartelesPage }))
 )
+const BuscarCuartelesPage = lazy(() =>
+  import("@/features/cuarteles/buscar-cuarteles-page").then((m) => ({
+    default: m.BuscarCuartelesPage,
+  }))
+)
 const UsuariosPage = lazy(() =>
   import("@/features/usuarios/usuarios-page").then((m) => ({ default: m.UsuariosPage }))
 )
@@ -51,8 +56,24 @@ const NotificacionesPage = lazy(() =>
 const PerfilPage = lazy(() =>
   import("@/features/perfil/perfil-page").then((m) => ({ default: m.PerfilPage }))
 )
-const OperacionesPage = lazy(() =>
-  import("@/features/operaciones/operaciones-page").then((m) => ({ default: m.OperacionesPage }))
+const OperacionesLayout = lazy(() =>
+  import("@/features/operaciones/operaciones-layout").then((m) => ({
+    default: m.OperacionesLayout,
+  }))
+)
+const CosteoPage = lazy(() =>
+  import("@/features/operaciones/costeo/costeo-page").then((m) => ({ default: m.CosteoPage }))
+)
+const InsumosPage = lazy(() =>
+  import("@/features/operaciones/insumos-page").then((m) => ({ default: m.InsumosPage }))
+)
+const TiposLaborPage = lazy(() =>
+  import("@/features/operaciones/tipos-labor-page").then((m) => ({ default: m.TiposLaborPage }))
+)
+const HistorialPage = lazy(() =>
+  import("@/features/operaciones/historial/historial-page").then((m) => ({
+    default: m.HistorialPage,
+  }))
 )
 const TelemetriaPage = lazy(() =>
   import("@/features/telemetria/telemetria-page").then((m) => ({ default: m.TelemetriaPage }))
@@ -97,10 +118,27 @@ export function AppRouter() {
             <Route element={<RoleRoute permiso="fincas" />}>
               <Route path="fincas" element={<FincasPage />} />
               <Route path="fincas/:fincaId/cuarteles" element={<CuartelesPage />} />
+              {/* Los cuarteles de una finca y la búsqueda en toda la empresa
+                  son dos endpoints distintos del backend, y por eso dos rutas
+                  distintas: `/cuarteles` es HU-11. */}
+              <Route path="cuarteles" element={<BuscarCuartelesPage />} />
             </Route>
 
             <Route element={<RoleRoute permiso="operaciones" />}>
-              <Route path="operaciones" element={<OperacionesPage />} />
+              <Route path="operaciones" element={<OperacionesLayout />}>
+                <Route index element={<CosteoPage />} />
+                <Route path="insumos" element={<InsumosPage />} />
+                <Route path="tipos-labor" element={<TiposLaborPage />} />
+              </Route>
+            </Route>
+
+            {/*
+              El historial por cuartel tiene su propio permiso: es el único
+              recurso de negocio que HU-17 le concede al Auditor, y el resto de
+              Operaciones —que son datos económicos— no.
+            */}
+            <Route element={<RoleRoute permiso="historialLabores" />}>
+              <Route path="cuarteles/:cuartelId/historial" element={<HistorialPage />} />
             </Route>
 
             <Route element={<RoleRoute permiso="telemetria" />}>

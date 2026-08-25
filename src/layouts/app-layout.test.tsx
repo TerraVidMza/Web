@@ -21,7 +21,8 @@ describe("Menú por rol", () => {
 
     for (const seccion of [
       "Dashboard",
-      "Fincas y Cuarteles",
+      "Fincas",
+      "Cuarteles",
       "Operaciones",
       "Telemetría IoT",
       "Vendimia",
@@ -44,7 +45,8 @@ describe("Menú por rol", () => {
 
     // Las cuatro que llevaban a un 403:
     for (const prohibida of [
-      "Fincas y Cuarteles",
+      "Fincas",
+      "Cuarteles",
       "Operaciones",
       "Telemetría IoT",
       "Vendimia",
@@ -57,7 +59,8 @@ describe("Menú por rol", () => {
     iniciarSesionComo("Agronomo")
     renderConProveedores(<AppLayout />)
 
-    expect(menu().getByRole("link", { name: "Fincas y Cuarteles" })).toBeInTheDocument()
+    expect(menu().getByRole("link", { name: "Fincas" })).toBeInTheDocument()
+    expect(menu().getByRole("link", { name: "Cuarteles" })).toBeInTheDocument()
     expect(menu().queryByRole("link", { name: "Usuarios" })).not.toBeInTheDocument()
     expect(menu().queryByRole("link", { name: "Configuración" })).not.toBeInTheDocument()
     expect(menu().queryByRole("link", { name: "Log de auditoría" })).not.toBeInTheDocument()

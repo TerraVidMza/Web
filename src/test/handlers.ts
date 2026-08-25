@@ -2,6 +2,12 @@ import { HttpResponse, http } from "msw"
 import type { RolNombre } from "@/auth/roles"
 import {
   CATALOGOS,
+  COSTEO,
+  COSTOS_INSUMO,
+  IDS,
+  INSUMOS_CATALOGO,
+  REGISTROS_LABOR,
+  TIPOS_LABOR_CATALOGO,
   CONFIGURACION,
   CUARTELES,
   DASHBOARD,
@@ -147,9 +153,100 @@ export const handlers = [
     )
   }),
 
+  http.patch(`${API}/fincas/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    const finca = FINCAS.find((f) => f.id === params.id) ?? FINCAS[0]
+    return HttpResponse.json({ ...finca, ...body, hectareas: String(body.hectareas ?? finca.hectareas) })
+  }),
+
+  /**
+   * La baja de finca es 409 mientras queden cuarteles activos: no cascadea, y
+   * sin ese freno los cuarteles seguian aceptando labores colgando de una finca
+   * invisible. `IDS.finca` tiene 3 cuarteles activos en los fixtures.
+   */
+  http.patch(`${API}/fincas/:id/desactivar`, ({ params }) => {
+    const finca = FINCAS.find((f) => f.id === params.id)
+    if (finca && finca.cuartelesActivos > 0) {
+      return HttpResponse.json(
+        {
+          statusCode: 409,
+          path: `/api/fincas/${String(params.id)}/desactivar`,
+          timestamp: new Date().toISOString(),
+          message: `La finca tiene ${finca.cuartelesActivos} cuartel(es) activo(s). Dales de baja primero.`,
+        },
+        { status: 409 }
+      )
+    }
+    return HttpResponse.json({ ...(finca ?? FINCAS[1]), activa: false })
+  }),
+
   http.get(`${API}/cuarteles`, () =>
     conRoles(["Propietario", "Agronomo", "Capataz"], "/api/cuarteles", () => CUARTELES)
   ),
+
+  /** `GET /cuarteles/buscar` (HU-11): otro endpoint, y este si esta paginado. */
+  http.get(`${API}/cuarteles/buscar`, ({ request }) => {
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    if (!permitidos.includes(rolActual)) return prohibido("/api/cuarteles/buscar")
+
+    const params = new URL(request.url).searchParams
+    const activo = params.get("activo") !== "false"
+    let filas = CUARTELES.filter((c) => c.activo === activo).map((c) => ({
+      ...c,
+      finca: { id: IDS.finca, nombre: "Finca El Rosal" },
+    }))
+
+    const buscar = params.get("buscar")?.toLowerCase()
+    if (buscar) filas = filas.filter((c) => c.nombre.toLowerCase().includes(buscar))
+    const fincaId = params.get("fincaId")
+    if (fincaId) filas = filas.filter((c) => c.fincaId === fincaId)
+    const variedadId = params.get("variedadId")
+    if (variedadId) filas = filas.filter((c) => c.variedadId === variedadId)
+    const estado = params.get("estado")
+    if (estado) filas = filas.filter((c) => c.estado === estado)
+    const anio = params.get("anioImplantacion")
+    if (anio) filas = filas.filter((c) => c.anioImplantacion === Number(anio))
+
+    const orden = params.get("orden") === "DESC" ? -1 : 1
+    const campo = params.get("ordenarPor") ?? "nombre"
+    filas = [...filas].sort((a, b) => {
+      const x = a[campo as "nombre"]
+      const y = b[campo as "nombre"]
+      return String(x).localeCompare(String(y)) * orden
+    })
+
+    return HttpResponse.json(
+      paginar(filas, Number(params.get("page") ?? 1), Number(params.get("pageSize") ?? 20))
+    )
+  }),
+
+  http.get(`${API}/cuarteles/variedades`, () => HttpResponse.json(CATALOGOS.variedad)),
+
+  http.patch(`${API}/cuarteles/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    const cuartel = CUARTELES.find((c) => c.id === params.id) ?? CUARTELES[0]
+    return HttpResponse.json({ ...cuartel, ...body })
+  }),
+
+  /**
+   * La baja de cuartel es 409 si tiene labores o pesajes de la campania actual:
+   * el costeo y la trazabilidad de la cosecha cuelgan de el.
+   */
+  http.patch(`${API}/cuarteles/:id/desactivar`, ({ params }) => {
+    if (params.id === IDS.cuartel) {
+      return HttpResponse.json(
+        {
+          statusCode: 409,
+          path: `/api/cuarteles/${String(params.id)}/desactivar`,
+          timestamp: new Date().toISOString(),
+          message:
+            'El cuartel tiene 4 labor(es) y 2 pesaje(s) registrados en la campaña actual ("2026"), así que no puede darse de baja sin perder su trazabilidad.',
+        },
+        { status: 409 }
+      )
+    }
+    return HttpResponse.json({ ...CUARTELES[0], id: params.id, activo: false })
+  }),
 
   http.post(`${API}/cuarteles`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>
@@ -158,12 +255,24 @@ export const handlers = [
 
   http.get(`${API}/catalogos`, ({ request }) => {
     const tipo = new URL(request.url).searchParams.get("tipo")
-    if (!tipo) {
-      // El backend devuelve 500 sin `tipo` (§5 del plan). Se reproduce para que
-      // ningún llamado nuevo lo omita sin enterarse.
-      return HttpResponse.json({ statusCode: 500, message: "Error interno" }, { status: 500 })
+    // `ListarCatalogoDto` rechaza el tipo ausente o desconocido con un 400 que
+    // nombra los valores validos. Antes el ausente era un 500 y el desconocido
+    // un 200 con lista vacia, que para un cliente es peor: no distingue "escribi
+    // mal el parametro" de "no hay datos".
+    if (!tipo || !(tipo in CATALOGOS)) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/catalogos",
+          timestamp: new Date().toISOString(),
+          message: [
+            "tipo debe ser uno de: variedad, sistema_conduccion, estado_cuartel, unidad_medida",
+          ],
+        },
+        { status: 400 }
+      )
     }
-    return HttpResponse.json(CATALOGOS[tipo as keyof typeof CATALOGOS] ?? [])
+    return HttpResponse.json(CATALOGOS[tipo as keyof typeof CATALOGOS])
   }),
 
   http.get(`${API}/usuarios`, ({ request }) => {
@@ -215,6 +324,28 @@ export const handlers = [
     return HttpResponse.json({ ...USUARIOS[1], nombre: body.nombre, email: body.email }, { status: 201 })
   }),
 
+  http.patch(`${API}/usuarios/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    const usuario = USUARIOS.find((u) => u.id === params.id) ?? USUARIOS[1]
+
+    // Nadie cambia su propio rol: combinado con la imposibilidad de dar de baja
+    // al ultimo Propietario, un autocambio podria dejar al sistema sin ninguno.
+    if (params.id === IDS.propietario && body.rolId && body.rolId !== usuario.rolId) {
+      return HttpResponse.json(
+        {
+          statusCode: 403,
+          path: `/api/usuarios/${String(params.id)}`,
+          timestamp: new Date().toISOString(),
+          message: "No puedes modificar tu propio rol.",
+        },
+        { status: 403 }
+      )
+    }
+
+    const rol = ROLES.find((r) => r.id === body.rolId) ?? usuario.rol
+    return HttpResponse.json({ ...usuario, ...body, rol, rolId: rol.id })
+  }),
+
   http.patch(`${API}/usuarios/:id/desactivar`, () => HttpResponse.json({ ...USUARIOS[1], activo: false })),
 
   http.get(`${API}/roles`, () => conRoles(["Propietario"], "/api/roles", () => ROLES)),
@@ -238,6 +369,118 @@ export const handlers = [
   }),
   http.patch(`${API}/notificaciones/:id/leida`, () => new HttpResponse(null, { status: 200 })),
   http.patch(`${API}/notificaciones/leidas`, () => new HttpResponse(null, { status: 200 })),
+
+  // ─── Operaciones (HU-15, 16, 17) ───────────────────────────────────────────
+
+  http.get(`${API}/registro-labor/costeo`, () =>
+    conRoles(["Propietario", "Agronomo"], "/api/registro-labor/costeo", () => COSTEO)
+  ),
+
+  http.get(`${API}/registro-labor/cuartel/:cuartelId`, ({ request }) => {
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz", "Auditor"]
+    if (!permitidos.includes(rolActual)) {
+      return prohibido("/api/registro-labor/cuartel")
+    }
+    const params = new URL(request.url).searchParams
+    let filas = REGISTROS_LABOR
+    const desde = params.get("desde")
+    if (desde) filas = filas.filter((r) => r.fecha >= desde)
+    const hasta = params.get("hasta")
+    if (hasta) filas = filas.filter((r) => r.fecha <= hasta)
+    return HttpResponse.json(paginar(filas, Number(params.get("page") ?? 1)))
+  }),
+
+  http.get(`${API}/insumos`, ({ request }) => {
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    if (!permitidos.includes(rolActual)) return prohibido("/api/insumos")
+    const incluir = new URL(request.url).searchParams.get("incluirInactivos") === "true"
+    return HttpResponse.json(
+      incluir ? INSUMOS_CATALOGO : INSUMOS_CATALOGO.filter((i) => i.activo)
+    )
+  }),
+
+  http.get(`${API}/insumos/:id/costos`, () =>
+    conRoles(["Propietario", "Agronomo"], "/api/insumos/costos", () => COSTOS_INSUMO)
+  ),
+
+  http.post(`${API}/insumos`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...INSUMOS_CATALOGO[0], ...body }, { status: 201 })
+  }),
+
+  http.patch(`${API}/insumos/:id`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...INSUMOS_CATALOGO[0], ...body })
+  }),
+
+  http.patch(`${API}/insumos/:id/desactivar`, () =>
+    HttpResponse.json({ ...INSUMOS_CATALOGO[0], activo: false })
+  ),
+
+  /** `@IsPositive()` + `@EsFechaNoRetroactiva()`: los dos se validan. */
+  http.post(`${API}/insumos/:id/costos`, async ({ request }) => {
+    const body = (await request.json()) as { costoUnitario: number; validFrom: string }
+    const errores: string[] = []
+    if (!(body.costoUnitario > 0)) {
+      errores.push("costoUnitario must be a positive number")
+    }
+    if (body.validFrom < new Date().toISOString().slice(0, 10)) {
+      errores.push(
+        "validFrom no puede ser retroactiva: cambiaría el costo ya aplicado a registros históricos."
+      )
+    }
+    if (errores.length > 0) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/insumos/costos",
+          timestamp: new Date().toISOString(),
+          message: errores,
+        },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json(
+      {
+        id: "e9444444-4444-4444-8444-444444444444",
+        insumoId: IDS.insumo,
+        costoUnitario: body.costoUnitario.toFixed(2),
+        validFrom: body.validFrom,
+        createdById: IDS.propietario,
+        createdAt: new Date().toISOString(),
+      },
+      { status: 201 }
+    )
+  }),
+
+  http.get(`${API}/tipos-labor`, ({ request }) => {
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    if (!permitidos.includes(rolActual)) return prohibido("/api/tipos-labor")
+    const incluir = new URL(request.url).searchParams.get("incluirInactivos") === "true"
+    return HttpResponse.json(
+      incluir ? TIPOS_LABOR_CATALOGO : TIPOS_LABOR_CATALOGO.filter((t) => t.activo)
+    )
+  }),
+
+  http.get(`${API}/tipos-labor/:id/costos`, () =>
+    conRoles(["Propietario", "Agronomo"], "/api/tipos-labor/costos", () =>
+      COSTOS_INSUMO.map((c) => ({ ...c, tipoLaborId: IDS.tipoLabor, insumoId: undefined }))
+    )
+  ),
+
+  http.post(`${API}/tipos-labor`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...TIPOS_LABOR_CATALOGO[0], ...body }, { status: 201 })
+  }),
+
+  http.patch(`${API}/tipos-labor/:id`, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...TIPOS_LABOR_CATALOGO[0], ...body })
+  }),
+
+  http.patch(`${API}/tipos-labor/:id/desactivar`, () =>
+    HttpResponse.json({ ...TIPOS_LABOR_CATALOGO[0], activo: false })
+  ),
 
   http.get(`${API}/configuracion`, () =>
     conRoles(["Propietario"], "/api/configuracion", () => CONFIGURACION)

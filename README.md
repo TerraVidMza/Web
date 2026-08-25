@@ -89,12 +89,16 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/cambiar-password` | Cambiar contraseña | Conectada — obligatoria si la contraseña es temporal (HU-05) |
 | `/` | Dashboard | Conectada — **un panel distinto por rol** (HU-32) |
 | `/perfil` | Mi perfil | Conectada — `GET/PATCH /usuarios/me` (HU-04) |
-| `/fincas` | Fincas | Conectada — listar y crear |
-| `/fincas/:fincaId/cuarteles` | Cuarteles | Conectada — listar y crear |
-| `/usuarios` (Propietario) | Usuarios | Conectada — paginada, con filtros por rol y estado |
+| `/fincas` | Fincas | Conectada — ABM completo (HU-08) |
+| `/fincas/:fincaId/cuarteles` | Cuarteles de una finca | Conectada — ABM completo (HU-09) |
+| `/cuarteles` | Buscar cuarteles | Conectada — búsqueda en toda la empresa, con filtros y orden (HU-11) |
+| `/usuarios` (Propietario) | Usuarios | Conectada — ABM completo con cambio de rol (HU-05, HU-06) |
 | `/auditoria` (Propietario, Auditor) | Log de auditoría | Conectada — paginada, con filtros (HU-07) |
 | `/notificaciones` | Notificaciones | Conectada — campana con badge y panel (HU-35) |
-| `/operaciones` (Propietario, Agrónomo) | Operaciones | Placeholder — pendiente conectar a labores/insumos/costos |
+| `/operaciones` (Propietario, Agrónomo) | Costeo por cuartel | Conectada — costo, ingresos y margen bruto (HU-15) |
+| `/operaciones/insumos` | Insumos | Conectada — ABM con versionado de costos (HU-16) |
+| `/operaciones/tipos-labor` | Tipos de labor | Conectada — ABM con versionado de costos (HU-16) |
+| `/cuarteles/:cuartelId/historial` | Historial de operaciones | Conectada — paginado; también accesible al Auditor (HU-17) |
 | `/telemetria` (Propietario, Agrónomo) | Telemetría IoT | Placeholder — pendiente conectar a sensores/lecturas/alertas |
 | `/vendimia` (Propietario, Agrónomo, Capataz) | Vendimia | Placeholder — pendiente conectar a cuadrillas/pesajes/remitos |
 | `/configuracion` (Propietario) | Configuración | Placeholder — pendiente conectar a `GET/PUT /configuracion` |
@@ -104,7 +108,14 @@ El acceso por rol sale de una sola tabla, [`src/auth/permisos.ts`](src/auth/perm
 
 ## Qué falta
 
-Los módulos de la Fase 3 del plan de mejoras: Operaciones (HU-15, 16, 17), Vendimia (23, 26, 27, 28), Telemetría (18, 20, 21, 22), Inteligencia agronómica (29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10, 11). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+Los bloques 6 a 10 de la Fase 3 del plan de mejoras: Vendimia (HU-23, 26, 27, 28), Telemetría (18, 20, 21, 22), Inteligencia agronómica (29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+
+Dos límites que vienen del backend y conviene tener presentes:
+
+- **Las fincas dadas de baja no se pueden listar.** `GET /fincas` filtra por `activa: true` y no acepta un parámetro para incluirlas, así que la baja es de ida. Los cuarteles sí: la búsqueda de HU-11 los muestra con el filtro de estado.
+- **`GET /configuracion` es solo del Propietario**, así que los demás roles ven la moneda y las unidades por defecto. Ver [`docs/DECISIONS.md`](docs/DECISIONS.md), W-004.
+- **El Auditor no puede descubrir cuarteles por la API.** HU-17 le concede el historial de operaciones por cuartel, pero `GET /cuarteles`, `/cuarteles/buscar` y `/cuarteles/:id` son `@Roles(Propietario, Agrónomo, Capataz)`, así que no tiene de dónde sacar un `cuartelId`. Mientras eso siga así, su única vía de entrada es el enlace que el log de auditoría muestra en los eventos sobre cuarteles.
+- **El listado de insumos y tipos de labor no trae el costo vigente**: vive en `/:id/costos`. Se consulta al abrir el diálogo de costos, para no disparar N+1 requests al dibujar la tabla.
 
 ## Documentación
 
