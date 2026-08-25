@@ -78,8 +78,25 @@ const HistorialPage = lazy(() =>
 const TelemetriaPage = lazy(() =>
   import("@/features/telemetria/telemetria-page").then((m) => ({ default: m.TelemetriaPage }))
 )
-const VendimiaPage = lazy(() =>
-  import("@/features/vendimia/vendimia-page").then((m) => ({ default: m.VendimiaPage }))
+const VendimiaLayout = lazy(() =>
+  import("@/features/vendimia/vendimia-layout").then((m) => ({ default: m.VendimiaLayout }))
+)
+const RemitosPage = lazy(() =>
+  import("@/features/vendimia/remitos-page").then((m) => ({ default: m.RemitosPage }))
+)
+const RemitoDetallePage = lazy(() =>
+  import("@/features/vendimia/remito-detalle-page").then((m) => ({
+    default: m.RemitoDetallePage,
+  }))
+)
+const CosechaPage = lazy(() =>
+  import("@/features/vendimia/cosecha-page").then((m) => ({ default: m.CosechaPage }))
+)
+const CuadrillasPage = lazy(() =>
+  import("@/features/vendimia/cuadrillas-page").then((m) => ({ default: m.CuadrillasPage }))
+)
+const PesajesPage = lazy(() =>
+  import("@/features/vendimia/pesajes-page").then((m) => ({ default: m.PesajesPage }))
 )
 const ConfiguracionPage = lazy(() =>
   import("@/features/configuracion/configuracion-page").then((m) => ({
@@ -146,7 +163,15 @@ export function AppRouter() {
             </Route>
 
             <Route element={<RoleRoute permiso="vendimia" />}>
-              <Route path="vendimia" element={<VendimiaPage />} />
+              <Route path="vendimia" element={<VendimiaLayout />}>
+                <Route index element={<RemitosPage />} />
+                <Route path="cosecha" element={<CosechaPage />} />
+                <Route path="cuadrillas" element={<CuadrillasPage />} />
+              </Route>
+              {/* Fuera del layout: el detalle del remito es imprimible, y las
+                  pestañas no tienen sentido en una hoja. */}
+              <Route path="remitos/:remitoId" element={<RemitoDetallePage />} />
+              <Route path="cuarteles/:cuartelId/pesajes" element={<PesajesPage />} />
             </Route>
 
             <Route element={<RoleRoute permiso="logAuditoria" />}>

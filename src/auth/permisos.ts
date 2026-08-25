@@ -69,10 +69,20 @@ export const PERMISOS = {
   /** `SensoresController` / `LecturasIotController` / `AlertasIotController`. */
   telemetria: [Propietario, Agronomo],
 
-  /** `RemitosController` / `PesajeVendimiaController` / `CuadrillasController`. */
+  /** `RemitosController.findAll` / `PesajeVendimiaController` — lectura. */
   vendimia: [Propietario, Agronomo, Capataz],
-  /** `RemitosController.aprobar/rechazar/liquidacion`. */
+  /** `RemitosController.aprobar/rechazar/liquidacion`: dato económico. */
   vendimiaAprobacion: [Propietario, Agronomo],
+  /** `CuadrillasController.findByFinca/create` — el Capataz da de alta (HU-23). */
+  cuadrillas: [Propietario, Agronomo, Capataz],
+  /** `CuadrillasController.update` y `:id/tarifas` (GET). */
+  cuadrillasEdicion: [Propietario, Agronomo],
+  /**
+   * `CuadrillasController.setTarifa` y `desactivar`. La tarifa a destajo la
+   * fija **solo** el Propietario (HU-23), y el service descarta el campo si
+   * quien crea la cuadrilla tiene otro rol.
+   */
+  cuadrillasTarifas: [Propietario],
 
   /** `InteligenciaAgronomicaController` — `@Roles` a nivel de clase. */
   inteligencia: [Propietario, Agronomo],

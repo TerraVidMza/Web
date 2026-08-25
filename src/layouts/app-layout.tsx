@@ -105,7 +105,7 @@ export function AppLayout() {
         Saltar al contenido
       </a>
 
-      <aside className="hidden w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex print:hidden">
         <div className="flex h-14 items-center border-b px-4">
           <Marca />
         </div>
@@ -116,7 +116,7 @@ export function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between gap-2 border-b px-4">
+        <header className="flex h-14 items-center justify-between gap-2 border-b px-4 print:hidden">
           {/*
             Navegación mobile (W7). Abajo de 768 px el `<aside>` está oculto y
             el header solo tenía el logo y un botón de salir: **la aplicación no
@@ -160,7 +160,7 @@ export function AppLayout() {
           // La `key` reinicia el scroll al cambiar de ruta: sin esto se entra a
           // la pantalla nueva a la altura a la que estaba la anterior.
           key={location.pathname}
-          className="flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6"
+          className="flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6 print:overflow-visible print:bg-white print:p-0"
         >
           <Outlet />
         </main>

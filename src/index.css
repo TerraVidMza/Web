@@ -128,3 +128,43 @@
     @apply font-sans;
     }
 }
+/*
+ * Impresión (HU-27, decisión D-h).
+ *
+ * El remito se imprime desde el navegador en vez de generar un PDF en el
+ * backend: el endpoint ya trae cuartel, finca y detalle de pesajes, y un PDF del
+ * lado del servidor sería un módulo nuevo para algo que el navegador cubre.
+ *
+ * Acá van solo las reglas que no se pueden expresar con `print:` de Tailwind en
+ * el componente: el fondo, los márgenes de página y el corte de tablas.
+ */
+@media print {
+  :root {
+    /* Tinta sobre papel: los tonos del tema oscuro gastan tóner y se leen mal. */
+    color-scheme: light;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  /* Que una fila de pesaje no quede partida entre dos hojas. */
+  tr,
+  img {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  a[href]::after {
+    /* Sin esto, un remito impreso lleno de URLs entre paréntesis es ilegible. */
+    content: none;
+  }
+
+  @page {
+    margin: 1.5cm;
+  }
+}

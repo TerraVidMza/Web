@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { z } from "zod"
 import { Loader2, Plus } from "lucide-react"
-import { clasificarCostos, hoyIso, useCostos, useFijarCosto } from "./use-catalogo-costeable"
+import { clasificarVigencias, hoyIso, useCostos, useFijarCosto } from "./use-catalogo-costeable"
 import type { CatalogoCosteableConfig } from "./config"
 import type { Insumo } from "@/api/schemas/operaciones"
 import { useFormato } from "@/context/configuracion-context"
@@ -73,7 +73,7 @@ export function CostosDialog({
     onExito: () => setMostrandoAlta(false),
   })
 
-  const costos = clasificarCostos(consulta.data ?? [])
+  const costos = clasificarVigencias(consulta.data ?? [])
 
   return (
     <Dialog
