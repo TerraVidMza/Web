@@ -1,13 +1,14 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { MapPinned, Search } from "lucide-react"
+import { MapPinned, Plus, Search } from "lucide-react"
 import { useFincas } from "./use-fincas"
-import { CrearFincaDialog } from "./crear-finca-dialog"
+import { FincaDialog } from "./finca-dialog"
+import { AccionesFinca } from "./acciones-finca"
 import { useAuth } from "@/context/auth-context"
 import { useFormato } from "@/context/configuracion-context"
 import { puede } from "@/auth/permisos"
-import { ActivoBadge } from "@/components/datos/estado-badge"
 import { EstadoConsulta } from "@/components/datos/estado-consulta"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -20,6 +21,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+/** `ListarFincasDto.search` es `@Length(1, 100)`: más largo es un 400. */
+const LARGO_MAXIMO_BUSQUEDA = 100
+
 export function FincasPage() {
   const [busqueda, setBusqueda] = useState("")
   const consulta = useFincas(busqueda || undefined)
@@ -27,18 +31,29 @@ export function FincasPage() {
   const formato = useFormato()
 
   const fincas = consulta.data ?? []
-  const puedeCrear = puede(user?.rol, "fincasEscritura")
+  const puedeEscribir = puede(user?.rol, "fincasEscritura")
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Fincas y Cuarteles</h1>
+          <h1 className="text-xl font-semibold">Fincas</h1>
           <p className="text-sm text-muted-foreground">
-            Gestioná la estructura espacial de tu operación.
+            Las fincas activas de tu empresa.{" "}
+            <Link to="/cuarteles" className="text-primary hover:underline">
+              Buscar cuarteles en todas
+            </Link>
+            .
           </p>
         </div>
-        {puedeCrear && <CrearFincaDialog />}
+        {puedeEscribir && (
+          <FincaDialog>
+            <Button>
+              <Plus className="size-4" aria-hidden="true" />
+              Nueva finca
+            </Button>
+          </FincaDialog>
+        )}
       </div>
 
       <div className="relative max-w-sm">
@@ -51,6 +66,7 @@ export function FincasPage() {
           aria-label="Buscar finca por nombre"
           placeholder="Buscar finca..."
           className="pl-8"
+          maxLength={LARGO_MAXIMO_BUSQUEDA}
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
@@ -64,7 +80,7 @@ export function FincasPage() {
             hayFiltros={busqueda.length > 0}
             vacio={{
               titulo: "No hay fincas cargadas todavía",
-              descripcion: puedeCrear
+              descripcion: puedeEscribir
                 ? "Creá la primera con el botón de arriba."
                 : "Cuando el Propietario cargue una, va a aparecer acá.",
             }}
@@ -75,7 +91,7 @@ export function FincasPage() {
           >
             <Table>
               <TableCaption className="sr-only">
-                Fincas de la empresa con su superficie y cantidad de cuarteles activos
+                Fincas activas de la empresa con su superficie y cantidad de cuarteles
               </TableCaption>
               <TableHeader>
                 <TableRow>
@@ -83,8 +99,7 @@ export function FincasPage() {
                   <TableHead>Ubicación</TableHead>
                   <TableHead className="text-right">Hectáreas</TableHead>
                   <TableHead className="text-right">Cuarteles</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="w-10">
+                  <TableHead className="w-24">
                     <span className="sr-only">Acciones</span>
                   </TableHead>
                 </TableRow>
@@ -103,17 +118,16 @@ export function FincasPage() {
                       {formato.numero(finca.cuartelesActivos)}
                     </TableCell>
                     <TableCell>
-                      <ActivoBadge activo={finca.activa} etiquetas={["Activa", "Inactiva"]} />
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to={`/fincas/${finca.id}/cuarteles`}
-                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <MapPinned className="size-4" aria-hidden="true" />
-                        Cuarteles
-                        <span className="sr-only"> de {finca.nombre}</span>
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/fincas/${finca.id}/cuarteles`}>
+                            <MapPinned className="size-4" aria-hidden="true" />
+                            Cuarteles
+                            <span className="sr-only"> de {finca.nombre}</span>
+                          </Link>
+                        </Button>
+                        {puedeEscribir && <AccionesFinca finca={finca} />}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -122,6 +136,16 @@ export function FincasPage() {
           </EstadoConsulta>
         </CardContent>
       </Card>
+
+      {/* El backend solo devuelve las fincas activas: `findAll` filtra por
+          `activa: true` y no acepta un parámetro para incluir las dadas de
+          baja. Decirlo es más honesto que una columna "Estado" que siempre
+          dice lo mismo. */}
+      <p className="text-xs text-muted-foreground">
+        Las fincas dadas de baja no se listan. Como para darlas de baja hay que dar de baja
+        antes sus cuarteles, esos cuarteles quedan visibles en la búsqueda marcando «incluir
+        inactivos».
+      </p>
     </div>
   )
 }

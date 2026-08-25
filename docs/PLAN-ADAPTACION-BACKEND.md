@@ -24,11 +24,11 @@ Qué hay que cambiar en este repositorio para que funcione contra el backend tal
 | **6** | Primitivas de UI | ✅ | `components/datos/` y `components/formulario/` |
 | **7** | Pantalla del Auditor (HU-07) | ✅ | `features/auditoria/` |
 | **8** | Notificaciones (HU-35) | ✅ | `features/notificaciones/` — campana con `noLeidas` y pantalla completa |
-| **9** | Módulos restantes | ⬜ | Pendiente. Los cimientos que necesitan ya están. |
+| **9** | Módulos restantes | 🟠 | Cerrado el bloque de Fincas, Cuarteles y Usuarios (HU-05, 06, 08, 09, 11). Faltan Operaciones, Vendimia, Telemetría, Inteligencia, Configuración, Ayuda y Mapa. |
 
 **B4 (decimales como string)** se cierra de raíz en `schemas/comunes.ts#decimal`, que acepta los dos formatos —string desde la entidad, número desde el SQL— y rechaza el string vacío para que un campo sin cargar no se vuelva un cero creíble.
 
-El bug del backend de la §5 (`GET /catalogos` sin `tipo` devuelve 500) **sigue abierto**: es del otro repositorio. Desde acá, `endpoints/catalogos.ts` hace el parámetro obligatorio en la firma para que no se pueda omitir por accidente, y el handler de MSW lo reproduce.
+Los bugs de la §5 **ya están corregidos en el Backend** (rama `fix/query-params-sin-validar`). Desde acá quedan dos consecuencias: `endpoints/catalogos.ts` mantiene `tipo` obligatorio en la firma —ahora por corrección, no por evitar un 500— y el filtro «ver inactivos» de la búsqueda de cuarteles ya se puede implementar, porque `?activo=false` dejó de devolver lo contrario de lo pedido.
 
 ---
 

@@ -1,15 +1,13 @@
 import { useMemo, useState } from "react"
-import { toast } from "sonner"
-import { Search, UserX } from "lucide-react"
-import { useDesactivarUsuario, useRoles, useUsuarios } from "./use-usuarios"
+import { Search } from "lucide-react"
+import { useRoles, useUsuarios } from "./use-usuarios"
 import { CrearUsuarioDialog } from "./crear-usuario-dialog"
+import { AccionesUsuario } from "./acciones-usuario"
 import { ETIQUETA_ROL } from "@/auth/roles"
-import { mensajeDeError } from "@/api/errores"
 import { useFormato } from "@/context/configuracion-context"
 import { ActivoBadge } from "@/components/datos/estado-badge"
 import { TablaPaginada } from "@/components/datos/tabla-paginada"
 import { usePaginacion } from "@/components/datos/paginacion"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { TableCell, TableHead, TableRow } from "@/components/ui/table"
 import {
@@ -42,7 +40,6 @@ export function UsuariosPage() {
   )
 
   const consulta = useUsuarios(params)
-  const desactivar = useDesactivarUsuario()
   const hayFiltros = busqueda.length > 0 || rolId !== TODOS || estado !== TODOS
 
   function alFiltrar<T>(setter: (valor: T) => void) {
@@ -51,15 +48,6 @@ export function UsuariosPage() {
       // Filtrar estando en la página 5 deja al usuario mirando una tabla vacía
       // aunque haya resultados.
       paginacion.reiniciar()
-    }
-  }
-
-  async function handleDesactivar(id: string, nombre: string) {
-    try {
-      await desactivar.mutateAsync(id)
-      toast.success(`${nombre} quedó desactivado`)
-    } catch (error) {
-      toast.error(mensajeDeError(error, "No se pudo desactivar el usuario"))
     }
   }
 
@@ -152,18 +140,7 @@ export function UsuariosPage() {
               <ActivoBadge activo={usuario.activo} />
             </TableCell>
             <TableCell>
-              {usuario.activo && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`Desactivar a ${usuario.nombre}`}
-                  title={`Desactivar a ${usuario.nombre}`}
-                  disabled={desactivar.isPending}
-                  onClick={() => void handleDesactivar(usuario.id, usuario.nombre)}
-                >
-                  <UserX className="size-4" aria-hidden="true" />
-                </Button>
-              )}
+              <AccionesUsuario usuario={usuario} />
             </TableCell>
           </TableRow>
         )}

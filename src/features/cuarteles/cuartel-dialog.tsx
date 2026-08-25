@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { z } from "zod"
-import { Loader2, Plus } from "lucide-react"
-import { useCrearCuartel } from "./use-cuarteles"
+import { Loader2 } from "lucide-react"
+import { useActualizarCuartel, useCrearCuartel } from "./use-cuarteles"
 import { useCatalogo } from "@/features/catalogos/use-catalogos"
 import { CatalogoTipo } from "@/api/schemas/catalogo"
+import type { Cuartel } from "@/api/schemas/cuartel"
 import {
   anioImplantacion,
   clon,
@@ -46,43 +47,65 @@ const cuartelSchema = z.object({
   longitud,
 })
 
-export function CrearCuartelDialog({ fincaId }: { fincaId: string }) {
+function valoresIniciales(cuartel?: Cuartel) {
+  return {
+    nombre: cuartel?.nombre ?? "",
+    variedadId: cuartel?.variedadId ?? "",
+    sistemaConduccionId: cuartel?.sistemaConduccionId ?? "",
+    clon: cuartel?.clon ?? "",
+    anioImplantacion: cuartel?.anioImplantacion != null ? String(cuartel.anioImplantacion) : "",
+    hectareas: cuartel?.hectareas != null ? String(cuartel.hectareas) : "",
+    latitud: cuartel?.latitud != null ? String(cuartel.latitud) : "",
+    longitud: cuartel?.longitud != null ? String(cuartel.longitud) : "",
+  }
+}
+
+/** Alta y edición de cuartel (HU-09). */
+export function CuartelDialog({
+  fincaId,
+  cuartel,
+  children,
+}: {
+  fincaId: string
+  /** Ausente = alta. */
+  cuartel?: Cuartel
+  children: ReactNode
+}) {
   const [abierto, setAbierto] = useState(false)
   const crear = useCrearCuartel()
+  const actualizar = useActualizarCuartel()
   const variedades = useCatalogo(CatalogoTipo.variedad)
   const sistemas = useCatalogo(CatalogoTipo.sistema_conduccion)
+  const esEdicion = cuartel !== undefined
 
   const form = useFormularioApi({
     schema: cuartelSchema,
-    defaultValues: {
-      nombre: "",
-      variedadId: "",
-      sistemaConduccionId: "",
-      clon: "",
-      anioImplantacion: "",
-      hectareas: "",
-      latitud: "",
-      longitud: "",
-    },
-    exito: "Cuartel creado correctamente",
-    error: "No se pudo crear el cuartel",
+    defaultValues: valoresIniciales(cuartel),
+    exito: esEdicion ? "Cuartel actualizado" : "Cuartel creado correctamente",
+    error: esEdicion ? "No se pudo actualizar el cuartel" : "No se pudo crear el cuartel",
     onSubmit: async (valores) => {
-      await crear.mutateAsync({ ...valores, fincaId })
+      if (esEdicion) {
+        // `fincaId` no va: el backend lo omite del DTO de update porque un
+        // cuartel no cambia de finca.
+        await actualizar.mutateAsync({ id: cuartel.id, ...valores })
+      } else {
+        await crear.mutateAsync({ ...valores, fincaId })
+      }
     },
     onExito: () => setAbierto(false),
   })
 
+  function alCambiar(nuevoAbierto: boolean) {
+    setAbierto(nuevoAbierto)
+    if (nuevoAbierto) form.reset(valoresIniciales(cuartel))
+  }
+
   return (
-    <Dialog open={abierto} onOpenChange={setAbierto}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" aria-hidden="true" />
-          Nuevo cuartel
-        </Button>
-      </DialogTrigger>
+    <Dialog open={abierto} onOpenChange={alCambiar}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[90svh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nuevo cuartel</DialogTitle>
+          <DialogTitle>{esEdicion ? `Editar ${cuartel.nombre}` : "Nuevo cuartel"}</DialogTitle>
           <DialogDescription>
             Definí la parametrización técnica del cuartel dentro de la finca. El estado de
             cosecha lo maneja el sistema a partir de los pesajes, no se carga acá.
@@ -226,7 +249,7 @@ export function CrearCuartelDialog({ fincaId }: { fincaId: string }) {
             <DialogFooter>
               <Button type="submit" disabled={form.enviando}>
                 {form.enviando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                Crear cuartel
+                {esEdicion ? "Guardar cambios" : "Crear cuartel"}
               </Button>
             </DialogFooter>
           </form>

@@ -2,10 +2,12 @@ import { obtener } from "../request"
 import { catalogoItemsSchema, type CatalogoTipo } from "../schemas/catalogo"
 
 /**
- * `tipo` es obligatorio: `GET /api/catalogos` sin él devuelve **500** para
- * cualquier rol —`@Query('tipo')` llega `undefined` hasta el `where` de TypeORM
- * y explota abajo—. Está reportado en la §5 del plan de adaptación como bug del
- * backend; mientras tanto, la firma de acá lo hace imposible de olvidar.
+ * `tipo` es obligatorio, y el tipo lo garantiza acá antes de salir a la red.
+ *
+ * El backend lo valida con `ListarCatalogoDto` y responde 400 nombrando los
+ * valores admitidos, así que un error se puede mostrar tal cual. Antes era un
+ * 500 —`@Query('tipo')` sin validar llegaba `undefined` hasta el `where` de
+ * TypeORM—; quedó corregido en la rama `fix/query-params-sin-validar`.
  */
 export function listarCatalogo(tipo: CatalogoTipo, incluirInactivos = false) {
   return obtener("/catalogos", catalogoItemsSchema, {

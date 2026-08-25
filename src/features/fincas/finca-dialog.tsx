@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { z } from "zod"
-import { Loader2, Plus } from "lucide-react"
-import { useCrearFinca } from "./use-fincas"
+import { Loader2 } from "lucide-react"
+import { useActualizarFinca, useCrearFinca } from "./use-fincas"
+import type { Finca } from "@/api/schemas/finca"
 import { hectareas, latitud, longitud, nombreCorto, ubicacion } from "@/lib/campos"
 import { useFormularioApi } from "@/components/formulario/use-formulario-api"
 import { ErrorDelServidor } from "@/components/formulario/error-del-servidor"
@@ -26,34 +27,69 @@ const fincaSchema = z.object({
   longitud,
 })
 
-export function CrearFincaDialog() {
+/** Los `<input>` devuelven strings; el número vacío se representa como `""`. */
+function valoresIniciales(finca?: Finca) {
+  return {
+    nombre: finca?.nombre ?? "",
+    ubicacion: finca?.ubicacion ?? "",
+    hectareas: finca ? String(finca.hectareas) : "",
+    latitud: finca?.latitud != null ? String(finca.latitud) : "",
+    longitud: finca?.longitud != null ? String(finca.longitud) : "",
+  }
+}
+
+/**
+ * Alta y edición en el mismo diálogo (HU-08).
+ *
+ * Los campos y las validaciones son idénticos, así que separarlos en dos
+ * componentes duplicaría el formulario entero para cambiar un título y un
+ * verbo — y garantizaría que dentro de tres meses uno tenga una validación que
+ * el otro no.
+ */
+export function FincaDialog({
+  finca,
+  children,
+}: {
+  /** Ausente = alta. */
+  finca?: Finca
+  children: ReactNode
+}) {
   const [abierto, setAbierto] = useState(false)
   const crear = useCrearFinca()
+  const actualizar = useActualizarFinca()
+  const esEdicion = finca !== undefined
 
   const form = useFormularioApi({
     schema: fincaSchema,
-    defaultValues: { nombre: "", ubicacion: "", hectareas: "", latitud: "", longitud: "" },
-    exito: "Finca creada correctamente",
-    error: "No se pudo crear la finca",
+    defaultValues: valoresIniciales(finca),
+    exito: esEdicion ? "Finca actualizada" : "Finca creada correctamente",
+    error: esEdicion ? "No se pudo actualizar la finca" : "No se pudo crear la finca",
     // Sin `empresaId`: el backend la toma del token y rechaza la request entera
     // si viene en el body (`forbidNonWhitelisted`).
     onSubmit: async (valores) => {
-      await crear.mutateAsync(valores)
+      if (esEdicion) {
+        await actualizar.mutateAsync({ id: finca.id, ...valores })
+      } else {
+        await crear.mutateAsync(valores)
+      }
     },
     onExito: () => setAbierto(false),
   })
 
+  function alCambiar(nuevoAbierto: boolean) {
+    setAbierto(nuevoAbierto)
+    // Al reabrir hay que releer la finca: `useFormularioApi` resetea a los
+    // valores por defecto del primer render, que en edición ya quedaron viejos
+    // si otro usuario la modificó mientras tanto.
+    if (nuevoAbierto) form.reset(valoresIniciales(finca))
+  }
+
   return (
-    <Dialog open={abierto} onOpenChange={setAbierto}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" aria-hidden="true" />
-          Nueva finca
-        </Button>
-      </DialogTrigger>
+    <Dialog open={abierto} onOpenChange={alCambiar}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nueva finca</DialogTitle>
+          <DialogTitle>{esEdicion ? `Editar ${finca.nombre}` : "Nueva finca"}</DialogTitle>
           <DialogDescription>
             Cargá los datos básicos de la finca. Las coordenadas son opcionales y se usan
             para ubicarla en el mapa.
@@ -134,7 +170,7 @@ export function CrearFincaDialog() {
             <DialogFooter>
               <Button type="submit" disabled={form.enviando}>
                 {form.enviando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-                Crear finca
+                {esEdicion ? "Guardar cambios" : "Crear finca"}
               </Button>
             </DialogFooter>
           </form>

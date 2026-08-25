@@ -1,12 +1,14 @@
 import { Link, useParams } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Plus } from "lucide-react"
 import { useCuartelesDeFinca } from "./use-cuarteles"
-import { CrearCuartelDialog } from "./crear-cuartel-dialog"
+import { CuartelDialog } from "./cuartel-dialog"
+import { AccionesCuartel } from "./acciones-cuartel"
 import { useAuth } from "@/context/auth-context"
 import { useFormato } from "@/context/configuracion-context"
 import { puede } from "@/auth/permisos"
-import { ActivoBadge, EstadoBadge } from "@/components/datos/estado-badge"
+import { EstadoBadge } from "@/components/datos/estado-badge"
 import { EstadoConsulta } from "@/components/datos/estado-consulta"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Table,
@@ -42,9 +44,18 @@ export function CuartelesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold">Cuarteles</h1>
-          <p className="text-sm text-muted-foreground">Cuarteles de la finca seleccionada.</p>
+          <p className="text-sm text-muted-foreground">
+            Cuarteles activos de la finca seleccionada.
+          </p>
         </div>
-        {fincaId && puedeCrear && <CrearCuartelDialog fincaId={fincaId} />}
+        {fincaId && puedeCrear && (
+          <CuartelDialog fincaId={fincaId}>
+            <Button>
+              <Plus className="size-4" aria-hidden="true" />
+              Nuevo cuartel
+            </Button>
+          </CuartelDialog>
+        )}
       </div>
 
       <Card>
@@ -71,7 +82,9 @@ export function CuartelesPage() {
                   <TableHead className="text-right">Año</TableHead>
                   <TableHead className="text-right">Hectáreas</TableHead>
                   <TableHead>Cosecha</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead className="w-10">
+                    <span className="sr-only">Acciones</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -90,7 +103,7 @@ export function CuartelesPage() {
                       <EstadoBadge estado={cuartel.estado} />
                     </TableCell>
                     <TableCell>
-                      <ActivoBadge activo={cuartel.activo} />
+                      <AccionesCuartel cuartel={cuartel} />
                     </TableCell>
                   </TableRow>
                 ))}

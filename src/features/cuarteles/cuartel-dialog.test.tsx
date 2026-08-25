@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
-import { CrearCuartelDialog } from "./crear-cuartel-dialog"
+import { CuartelDialog } from "./cuartel-dialog"
+import { Button } from "@/components/ui/button"
 import { IDS } from "@/test/fixtures"
 import { iniciarSesionComo, renderConProveedores, screen, waitFor } from "@/test/utils"
 import { servidor } from "@/test/setup"
@@ -23,11 +24,19 @@ async function completarMinimo(usuario: ReturnType<typeof renderConProveedores>[
   await usuario.click(await screen.findByRole("option", { name: "Espaldero" }))
 }
 
-describe("CrearCuartelDialog", () => {
+function Alta() {
+  return (
+    <CuartelDialog fincaId={IDS.finca}>
+      <Button>Nuevo cuartel</Button>
+    </CuartelDialog>
+  )
+}
+
+describe("CuartelDialog", () => {
   it("manda los números como números y omite los campos vacíos", async () => {
     iniciarSesionComo("Agronomo")
     const cuerpos = capturarAltas()
-    const { usuario } = renderConProveedores(<CrearCuartelDialog fincaId={IDS.finca} />)
+    const { usuario } = renderConProveedores(<Alta />)
 
     await completarMinimo(usuario)
     await usuario.type(screen.getByLabelText(/hectáreas/i), "6")
@@ -51,7 +60,7 @@ describe("CrearCuartelDialog", () => {
 
   it("rechaza un año de implantación futuro, como @EsAnioImplantacionValido", async () => {
     iniciarSesionComo("Agronomo")
-    const { usuario } = renderConProveedores(<CrearCuartelDialog fincaId={IDS.finca} />)
+    const { usuario } = renderConProveedores(<Alta />)
 
     await completarMinimo(usuario)
     await usuario.type(
@@ -65,7 +74,7 @@ describe("CrearCuartelDialog", () => {
 
   it("rechaza una latitud fuera de rango, como @Min(-90) @Max(90)", async () => {
     iniciarSesionComo("Agronomo")
-    const { usuario } = renderConProveedores(<CrearCuartelDialog fincaId={IDS.finca} />)
+    const { usuario } = renderConProveedores(<Alta />)
 
     await completarMinimo(usuario)
     await usuario.type(screen.getByLabelText(/latitud/i), "120")
@@ -76,7 +85,7 @@ describe("CrearCuartelDialog", () => {
 
   it("exige seleccionar variedad y sistema de conducción", async () => {
     iniciarSesionComo("Agronomo")
-    const { usuario } = renderConProveedores(<CrearCuartelDialog fincaId={IDS.finca} />)
+    const { usuario } = renderConProveedores(<Alta />)
 
     await usuario.click(screen.getByRole("button", { name: /nuevo cuartel/i }))
     await usuario.type(screen.getByLabelText(/^nombre$/i), "Cuartel 7")

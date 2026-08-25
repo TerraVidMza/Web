@@ -89,9 +89,10 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/cambiar-password` | Cambiar contraseña | Conectada — obligatoria si la contraseña es temporal (HU-05) |
 | `/` | Dashboard | Conectada — **un panel distinto por rol** (HU-32) |
 | `/perfil` | Mi perfil | Conectada — `GET/PATCH /usuarios/me` (HU-04) |
-| `/fincas` | Fincas | Conectada — listar y crear |
-| `/fincas/:fincaId/cuarteles` | Cuarteles | Conectada — listar y crear |
-| `/usuarios` (Propietario) | Usuarios | Conectada — paginada, con filtros por rol y estado |
+| `/fincas` | Fincas | Conectada — ABM completo (HU-08) |
+| `/fincas/:fincaId/cuarteles` | Cuarteles de una finca | Conectada — ABM completo (HU-09) |
+| `/cuarteles` | Buscar cuarteles | Conectada — búsqueda en toda la empresa, con filtros y orden (HU-11) |
+| `/usuarios` (Propietario) | Usuarios | Conectada — ABM completo con cambio de rol (HU-05, HU-06) |
 | `/auditoria` (Propietario, Auditor) | Log de auditoría | Conectada — paginada, con filtros (HU-07) |
 | `/notificaciones` | Notificaciones | Conectada — campana con badge y panel (HU-35) |
 | `/operaciones` (Propietario, Agrónomo) | Operaciones | Placeholder — pendiente conectar a labores/insumos/costos |
@@ -104,7 +105,12 @@ El acceso por rol sale de una sola tabla, [`src/auth/permisos.ts`](src/auth/perm
 
 ## Qué falta
 
-Los módulos de la Fase 3 del plan de mejoras: Operaciones (HU-15, 16, 17), Vendimia (23, 26, 27, 28), Telemetría (18, 20, 21, 22), Inteligencia agronómica (29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10, 11). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+Los bloques 5 a 10 de la Fase 3 del plan de mejoras: Operaciones (HU-15, 16, 17), Vendimia (23, 26, 27, 28), Telemetría (18, 20, 21, 22), Inteligencia agronómica (29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+
+Dos límites que vienen del backend y conviene tener presentes:
+
+- **Las fincas dadas de baja no se pueden listar.** `GET /fincas` filtra por `activa: true` y no acepta un parámetro para incluirlas, así que la baja es de ida. Los cuarteles sí: la búsqueda de HU-11 los muestra con el filtro de estado.
+- **`GET /configuracion` es solo del Propietario**, así que los demás roles ven la moneda y las unidades por defecto. Ver [`docs/DECISIONS.md`](docs/DECISIONS.md), W-004.
 
 ## Documentación
 
