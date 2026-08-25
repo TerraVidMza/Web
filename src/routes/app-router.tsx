@@ -134,13 +134,32 @@ const CuadrillasPage = lazy(() =>
 const PesajesPage = lazy(() =>
   import("@/features/vendimia/pesajes-page").then((m) => ({ default: m.PesajesPage }))
 )
-const ConfiguracionPage = lazy(() =>
-  import("@/features/configuracion/configuracion-page").then((m) => ({
-    default: m.ConfiguracionPage,
+const ConfiguracionLayout = lazy(() =>
+  import("@/features/configuracion/configuracion-layout").then((m) => ({
+    default: m.ConfiguracionLayout,
   }))
 )
-const AyudaPage = lazy(() =>
-  import("@/features/ayuda/ayuda-page").then((m) => ({ default: m.AyudaPage }))
+const ParametrosPage = lazy(() =>
+  import("@/features/configuracion/parametros-page").then((m) => ({
+    default: m.ParametrosPage,
+  }))
+)
+const TablasMaestrasPage = lazy(() =>
+  import("@/features/configuracion/tablas-maestras-page").then((m) => ({
+    default: m.TablasMaestrasPage,
+  }))
+)
+const AyudaLayout = lazy(() =>
+  import("@/features/ayuda/ayuda-layout").then((m) => ({ default: m.AyudaLayout }))
+)
+const ManualPage = lazy(() =>
+  import("@/features/ayuda/manual-page").then((m) => ({ default: m.ManualPage }))
+)
+const SoportePage = lazy(() =>
+  import("@/features/ayuda/soporte-page").then((m) => ({ default: m.SoportePage }))
+)
+const MapaPage = lazy(() =>
+  import("@/features/mapa/mapa-page").then((m) => ({ default: m.MapaPage }))
 )
 const NotFoundPage = lazy(() =>
   import("@/features/not-found/not-found-page").then((m) => ({ default: m.NotFoundPage }))
@@ -166,7 +185,10 @@ export function AppRouter() {
             <Route index element={<DashboardPage />} />
             <Route path="perfil" element={<PerfilPage />} />
             <Route path="notificaciones" element={<NotificacionesPage />} />
-            <Route path="ayuda" element={<AyudaPage />} />
+            <Route path="ayuda" element={<AyudaLayout />}>
+              <Route index element={<ManualPage />} />
+              <Route path="soporte" element={<SoportePage />} />
+            </Route>
 
             <Route element={<RoleRoute permiso="fincas" />}>
               <Route path="fincas" element={<FincasPage />} />
@@ -175,6 +197,7 @@ export function AppRouter() {
                   son dos endpoints distintos del backend, y por eso dos rutas
                   distintas: `/cuarteles` es HU-11. */}
               <Route path="cuarteles" element={<BuscarCuartelesPage />} />
+              <Route path="mapa" element={<MapaPage />} />
             </Route>
 
             <Route element={<RoleRoute permiso="operaciones" />}>
@@ -237,7 +260,10 @@ export function AppRouter() {
             </Route>
 
             <Route element={<RoleRoute permiso="configuracion" />}>
-              <Route path="configuracion" element={<ConfiguracionPage />} />
+              <Route path="configuracion" element={<ConfiguracionLayout />}>
+                <Route index element={<ParametrosPage />} />
+                <Route path="catalogos" element={<TablasMaestrasPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>

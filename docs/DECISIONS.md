@@ -313,3 +313,56 @@ varias escalas, y lo que el productor lee es la variación, que es un número.
 `sentidoIndicadores`, que viene del backend. Un costo que sube es malo y unos
 kilos que suben son buenos, y eso no se deduce del signo. La flecha acompaña al
 color para que el sentido no dependa del color solo.
+
+---
+
+## W-021 — La contraseña SMTP nunca se precarga ni se reenvía
+
+**Decisión (HU-33):** el campo de `smtp_pass` arranca vacío, con un placeholder
+que dice «Ya configurada», y su botón de guardar está deshabilitado mientras no
+se escriba algo.
+
+**Por qué:** `GET /configuracion` devuelve `smtp_pass` como `********` — el
+backend la enmascara del lado del servidor. Si la pantalla precargara ese valor
+y lo reenviara al guardar cualquier otro campo del formulario, **guardaría ocho
+asteriscos como contraseña** y dejaría el correo saliente roto sin que nadie se
+entere hasta el próximo alta de usuario.
+
+Cada campo se guarda por separado —`PUT /configuracion` recibe una clave y un
+valor— así que el riesgo era real, no teórico.
+
+---
+
+## W-022 — El mapa usa `CircleMarker`, no los marcadores por defecto
+
+**Decisión (HU-10, D-a):** Leaflet con tiles de OpenStreetMap, y círculos SVG
+como marcadores.
+
+**Por qué OSM:** sin API key, sin cuota y sin tarjeta de crédito. La historia
+solo pide marcadores con color por estado y un popup.
+
+**Por qué círculos:** los íconos PNG por defecto de Leaflet se rompen con los
+bundlers —la ruta de la imagen se resuelve relativa al CSS y hay que parchearla
+a mano—, y un círculo SVG además se colorea por estado sin generar una imagen
+por color. El color nunca va solo: cada marcador lleva un tooltip con el estado
+escrito y hay una referencia al pie.
+
+**El caso que hoy es el normal:** en el seed del backend todas las coordenadas
+son `null`. Un mapa vacío sin explicación se lee como un mapa roto, así que la
+pantalla dice qué falta y enlaza a dónde se carga.
+
+Leaflet se importa de forma diferida dentro de la propia pantalla: son ~156 kB
+que solo hacen falta cuando hay algo que dibujar.
+
+---
+
+## W-023 — La búsqueda del centro de ayuda es local; los filtros, del backend
+
+**Decisión (HU-36):** `tipo` y `modulo` se mandan al backend; el texto se filtra
+en el cliente.
+
+**Por qué:** el endpoint no ofrece búsqueda por texto, y el manual de una
+empresa no llega a tener tantos artículos como para justificar pedirla. Los dos
+filtros que el backend sí valida se le mandan a él —antes llegaban crudos y un
+`?modulo=vendmia` con typo devolvía 200 con la lista vacía, o sea un centro de
+ayuda sin artículos y nada que explicara por qué—.
