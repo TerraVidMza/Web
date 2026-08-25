@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { X } from "lucide-react"
+import { History, X } from "lucide-react"
 import { useAuditoria } from "./use-auditoria"
 import { DetalleCambios } from "./detalle-cambios"
 import {
@@ -12,6 +12,7 @@ import { useFormato } from "@/context/configuracion-context"
 import { ETIQUETA_ROL } from "@/auth/roles"
 import { TablaPaginada } from "@/components/datos/tabla-paginada"
 import { usePaginacion } from "@/components/datos/paginacion"
+import { Link } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -181,7 +182,25 @@ export function AuditoriaPage() {
                 {evento.accion}
               </Badge>
             </TableCell>
-            <TableCell>{etiquetaEntidad(evento.entidad)}</TableCell>
+            <TableCell>
+              {/*
+                El Auditor no puede listar cuarteles —`GET /cuarteles` es
+                `@Roles(P, A, C)`—, así que este enlace es su **única** vía de
+                entrada al historial de operaciones que HU-17 sí le concede.
+              */}
+              {evento.entidad === "cuartel" && evento.entidadId ? (
+                <Link
+                  to={`/cuarteles/${evento.entidadId}/historial`}
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  <History className="size-3.5" aria-hidden="true" />
+                  Cuartel
+                  <span className="sr-only">: ver su historial de operaciones</span>
+                </Link>
+              ) : (
+                etiquetaEntidad(evento.entidad)
+              )}
+            </TableCell>
             <TableCell>
               <div className="flex flex-col">
                 <span className="font-medium">{evento.actor?.nombre ?? "—"}</span>

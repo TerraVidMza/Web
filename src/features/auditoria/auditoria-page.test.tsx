@@ -48,6 +48,19 @@ describe("AuditoriaPage", () => {
     expect(await screen.findByText(/No se pudieron cargar los datos/i)).toBeInTheDocument()
   })
 
+  /**
+   * El Auditor no puede listar cuarteles —`GET /cuarteles` es `@Roles(P, A, C)`—,
+   * así que este enlace es su única vía de entrada al historial de operaciones
+   * que HU-17 sí le concede. Es un hueco del backend, no una decisión de UX.
+   */
+  it("desde un evento sobre un cuartel se llega a su historial", async () => {
+    iniciarSesionComo("Auditor")
+    renderConProveedores(<AuditoriaPage />)
+
+    const enlace = await screen.findByRole("link", { name: /Cuartel/i })
+    expect(enlace).toHaveAttribute("href", expect.stringContaining("/historial"))
+  })
+
   it("la tabla tiene caption para lectores de pantalla", async () => {
     iniciarSesionComo("Auditor")
     renderConProveedores(<AuditoriaPage />)

@@ -148,3 +148,40 @@ lanza si `VITE_API_URL` no está.
 `.env` mal escrito en producción en una app que apunta al localhost de quien la
 abre: no falla el build, no falla el arranque, falla cada request con un error de
 red que parece un problema del backend.
+
+---
+
+## W-011 — El Auditor entra al historial por cuartel desde el log de auditoría
+
+**Contexto:** HU-17 le concede al Auditor el historial de operaciones por cuartel
+—`GET /registro-labor/cuartel/:id` lo incluye explícitamente en sus `@Roles`—,
+pero **no tiene forma de obtener un `cuartelId`**: `GET /cuarteles`,
+`/cuarteles/buscar` y `/cuarteles/:id` son `@Roles(Propietario, Agrónomo,
+Capataz)`.
+
+**Decisión:** el log de auditoría muestra un enlace al historial en los eventos
+cuya entidad es `cuartel`. Es la única vía de entrada que el contrato actual
+permite, y de paso es un recorrido coherente: "veo que tocaron el cuartel X,
+quiero ver qué se hizo ahí".
+
+**Lo correcto sería** que el backend le diera al Auditor un listado de cuarteles
+de solo lectura. Queda anotado como hueco del contrato, no como decisión de
+diseño de esta pantalla.
+
+---
+
+## W-012 — El costo vigente se consulta al abrir el diálogo, no por fila
+
+**Decisión:** el listado de insumos y tipos de labor muestra nombre, unidad y
+estado; el precio se pide al abrir «Costos», que trae el historial completo.
+
+**Por qué:** `GET /insumos` no incluye el costo vigente —vive en
+`/:id/costos`—, así que mostrarlo en la tabla serían N+1 requests al dibujar.
+Y el historial completo es más útil que el número suelto: deja ver desde cuándo
+rige cada precio y cuáles están programados a futuro.
+
+**Detalle que no es cosmético:** el backend devuelve el historial ordenado por
+`validFrom` descendente, así que **el primero no es necesariamente el vigente**
+—un costo cargado con fecha futura encabeza la lista—. La pantalla marca
+«Vigente» y «Programado» por separado; sin esa distinción mostraría como precio
+actual uno que todavía no se aplica.

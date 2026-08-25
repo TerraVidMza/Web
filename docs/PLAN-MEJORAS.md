@@ -32,7 +32,7 @@ Auditoría del frontend completo y plan de trabajo. Complementa el [plan de adap
 | **Fase 0** — Que lo que existe funcione | ✅ Cerrada |
 | **Fase 1** — Cimientos (F1-1 … F1-7) | ✅ Cerrada |
 | **Fase 2** — Calidad de producto (F2-1 … F2-6) | ✅ Cerrada |
-| **Fase 3** — Los módulos | 🟠 Bloques 1 a 4 cerrados; 5 a 10 pendientes |
+| **Fase 3** — Los módulos | 🟠 Bloques 1 a 5 cerrados; 6 a 10 pendientes |
 
 **Fase 3, detalle:**
 
@@ -42,7 +42,7 @@ Auditoría del frontend completo y plan de trabajo. Complementa el [plan de adap
 | 2 | Notificaciones (HU-35) | ✅ |
 | 3 | Perfil y contraseñas (HU-03, HU-04) | ✅ |
 | 4 | Completar Fincas, Cuarteles y Usuarios (HU-05, 06, 08, 09, 11) | ✅ |
-| 5 | Operaciones (HU-15, 16, 17) | ⬜ |
+| 5 | Operaciones (HU-15, 16, 17) | ✅ |
 | 6 | Vendimia (HU-23, 26, 27, 28) | ⬜ |
 | 7 | Telemetría (HU-18, 20, 21, 22) | ⬜ |
 | 8 | Inteligencia (HU-29, 30, 31) | ⬜ |
