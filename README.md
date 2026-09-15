@@ -59,6 +59,17 @@ La app queda disponible en `http://localhost:5173`.
 
 Los tres primeros son lo que corre [el workflow de CI](.github/workflows/ci.yml) en cada PR.
 
+## Despliegue (Producción)
+
+El frontend se despliega automáticamente en **Google Cloud (Firebase Hosting)**.
+La integración continua y entrega continua (CI/CD) está configurada mediante GitHub Actions:
+
+- Al hacer un *push* a la rama `main` o al activar el workflow manualmente, se ejecuta [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+- El workflow compila la aplicación para producción inyectando la variable `VITE_API_URL` (gestión de URLs del backend mediante GitHub Secrets).
+- Finalmente, se despliega a Firebase usando credenciales de Service Account configuradas en el repositorio.
+
+La configuración de enrutamiento y servidor estático se encuentra en `firebase.json`.
+
 ## Cómo está organizado
 
 ```
