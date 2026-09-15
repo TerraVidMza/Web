@@ -54,6 +54,7 @@ export function LoginPage() {
     <MarcoAuth
       titulo="TerraVid"
       descripcion="Ingresá con tu cuenta para continuar"
+      logoGrande
       pie={
         <p className="text-center text-sm">
           <Link to="/olvide-mi-password" className="text-primary hover:underline">

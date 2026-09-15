@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { NavLink, Outlet, useLocation } from "react-router-dom"
-import { Grape, LogOut, Menu, User } from "lucide-react"
+import { LogOut, Menu, User } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useFormato } from "@/context/configuracion-context"
 import { puede } from "@/auth/permisos"
@@ -8,6 +8,7 @@ import { ETIQUETA_ROL } from "@/auth/roles"
 import { NAV_ITEMS } from "./nav-items"
 import { CampanaNotificaciones } from "@/features/notificaciones/campana-notificaciones"
 import { BotonTema } from "@/components/theme-provider"
+import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -42,11 +43,13 @@ function Navegacion({ alNavegar }: { alNavegar?: () => void }) {
   )
 }
 
-function Marca() {
+/** `variante="claro"` para fondos siempre oscuros (sidebar, drawer mobile); el
+ *  default sigue el tema activo (header mobile, cuyo fondo cambia con el tema). */
+function Marca({ variante = "auto" }: { variante?: "auto" | "oscuro" | "claro" }) {
   const { nombreOrganizacion } = useFormato()
   return (
     <div className="flex items-center gap-2">
-      <Grape className="size-5 text-primary" aria-hidden="true" />
+      <Logo variante={variante} className="size-6" />
       <span className="font-semibold">{nombreOrganizacion ?? "TerraVid"}</span>
     </div>
   )
@@ -107,7 +110,7 @@ export function AppLayout() {
 
       <aside className="hidden w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex print:hidden">
         <div className="flex h-14 items-center border-b px-4">
-          <Marca />
+          <Marca variante="claro" />
         </div>
         <Navegacion />
         <div className="border-t p-3">
@@ -134,7 +137,7 @@ export function AppLayout() {
                 <SheetHeader className="h-14 justify-center border-b px-4">
                   <SheetTitle asChild>
                     <div>
-                      <Marca />
+                      <Marca variante="claro" />
                     </div>
                   </SheetTitle>
                 </SheetHeader>
