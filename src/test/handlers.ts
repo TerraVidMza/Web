@@ -4,6 +4,8 @@ import {
   CATALOGOS,
   COSTEO,
   ALERTAS_PENDIENTES,
+  ARTICULOS,
+  EMPRESA_ID,
   CUADRILLAS,
   COSTOS_INSUMO,
   IDS,
@@ -16,6 +18,7 @@ import {
   SENSORES,
   SERIE,
   TARIFAS,
+  TICKETS,
   UMBRAL,
   TIPOS_LABOR_CATALOGO,
   CONFIGURACION,
@@ -30,6 +33,12 @@ import {
   tokenDePrueba,
   usuarioSesion,
 } from "./fixtures"
+import {
+  CAMPANIAS,
+  COMPARACION,
+  CORRELACION,
+  RECOMENDACIONES,
+} from "./fixtures-inteligencia"
 
 const API = "http://localhost:3000/api"
 
@@ -735,6 +744,175 @@ export const handlers = [
       revisadaPorId: IDS.propietario,
       revisadaAt: new Date().toISOString(),
     })
+  ),
+
+  // Campanias e inteligencia (HU-29, 30, 31)
+
+  http.get(`${API}/campanias/actual`, () =>
+    HttpResponse.json(CAMPANIAS.find((c) => !c.cerrada) ?? null)
+  ),
+
+  http.get(`${API}/campanias`, () => HttpResponse.json(CAMPANIAS)),
+
+  http.post(`${API}/campanias`, async ({ request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/campanias")
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CAMPANIAS[0], ...body }, { status: 201 })
+  }),
+
+  http.patch(`${API}/campanias/:id/cerrar`, ({ params }) =>
+    HttpResponse.json({ ...CAMPANIAS[0], id: params.id, cerrada: true })
+  ),
+
+  http.patch(`${API}/campanias/:id/reabrir`, ({ params }) =>
+    HttpResponse.json({ ...CAMPANIAS[1], id: params.id, cerrada: false })
+  ),
+
+  http.patch(`${API}/campanias/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CAMPANIAS[0], id: params.id, ...body })
+  }),
+
+  http.get(`${API}/inteligencia-agronomica/correlacion/:cuartelId`, ({ request }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) {
+      return prohibido("/api/inteligencia-agronomica/correlacion")
+    }
+    const params = new URL(request.url).searchParams
+    // El backend responde 400 sin fechas o sin sensor. Antes era un 200 que
+    // decia "no hay suficientes datos": parecia un veredicto agronomico sobre
+    // el cuartel cuando en realidad faltaba el parametro.
+    if (!params.get("desde") || !params.get("hasta") || !params.get("sensorId")) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/inteligencia-agronomica/correlacion",
+          timestamp: new Date().toISOString(),
+          message: ["desde debe ser una fecha ISO (por ejemplo 2026-03-01)."],
+        },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json(CORRELACION)
+  }),
+
+  http.get(`${API}/inteligencia-agronomica/recomendaciones/:cuartelId`, () =>
+    conRoles(
+      ["Propietario", "Agronomo"],
+      "/api/inteligencia-agronomica/recomendaciones",
+      () => RECOMENDACIONES
+    )
+  ),
+
+  http.patch(
+    `${API}/inteligencia-agronomica/recomendaciones/:id`,
+    async ({ params, request }) => {
+      const body = (await request.json()) as { estado: string; nota?: string }
+      return HttpResponse.json({
+        ...RECOMENDACIONES[0],
+        id: params.id,
+        estado: body.estado,
+        nota: body.nota ?? null,
+        resueltaPorId: IDS.agronomo,
+        timestampEstado: new Date().toISOString(),
+      })
+    }
+  ),
+
+  http.get(`${API}/inteligencia-agronomica/comparar-campanias/:cuartelId`, () =>
+    conRoles(
+      ["Propietario", "Agronomo"],
+      "/api/inteligencia-agronomica/comparar",
+      () => COMPARACION
+    )
+  ),
+
+  // Configuracion y tablas maestras (HU-33, 34)
+
+  http.put(`${API}/configuracion`, async ({ request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/configuracion")
+    const body = (await request.json()) as { clave: string; valor: string }
+    return HttpResponse.json({
+      empresaId: EMPRESA_ID,
+      clave: body.clave,
+      // El backend vuelve a enmascarar al devolver una clave secreta.
+      valor: body.clave === "smtp_pass" ? "********" : body.valor,
+      updatedById: IDS.propietario,
+      updatedAt: new Date().toISOString(),
+    })
+  }),
+
+  http.post(`${API}/catalogos`, async ({ request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/catalogos")
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json(
+      { ...CATALOGOS.variedad[0], id: "d9111111-1111-4111-8111-111111111111", ...body },
+      { status: 201 }
+    )
+  }),
+
+  http.patch(`${API}/catalogos/:id/desactivar`, ({ params }) =>
+    HttpResponse.json({ ...CATALOGOS.variedad[0], id: params.id, activo: false })
+  ),
+
+  http.patch(`${API}/catalogos/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    return HttpResponse.json({ ...CATALOGOS.variedad[0], id: params.id, ...body })
+  }),
+
+  /**
+   * El borrado fisico se rechaza si el valor esta en uso, y el mensaje dice en
+   * cuantos registros: es la diferencia entre "sacalo de los formularios" y
+   * "esto nunca debio existir".
+   */
+  http.delete(`${API}/catalogos/:id`, ({ params }) => {
+    if (params.id === IDS.variedad) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: `/api/catalogos/${String(params.id)}`,
+          timestamp: new Date().toISOString(),
+          message:
+            "No es posible eliminar este valor porque está en uso en 3 registro(s) de cuarteles. Puedes desactivarlo para que no aparezca en nuevos formularios.",
+        },
+        { status: 400 }
+      )
+    }
+    return new HttpResponse(null, { status: 200 })
+  }),
+
+  // Ayuda (HU-36)
+
+  http.get(`${API}/ayuda/articulos`, ({ request }) => {
+    const params = new URL(request.url).searchParams
+    let filas = ARTICULOS
+    const tipo = params.get("tipo")
+    if (tipo) filas = filas.filter((a) => a.tipo === tipo)
+    const modulo = params.get("modulo")
+    if (modulo) filas = filas.filter((a) => a.modulo === modulo)
+    return HttpResponse.json(filas)
+  }),
+
+  http.post(`${API}/ayuda/tickets`, async ({ request }) => {
+    const body = (await request.json()) as { modulo: string; descripcion: string }
+    if (body.descripcion.length < 10) {
+      return HttpResponse.json(
+        {
+          statusCode: 400,
+          path: "/api/ayuda/tickets",
+          timestamp: new Date().toISOString(),
+          message: ["descripcion must be longer than or equal to 10 characters"],
+        },
+        { status: 400 }
+      )
+    }
+    return HttpResponse.json(
+      { ...TICKETS[0], ...body, emailEnviado: true },
+      { status: 201 }
+    )
+  }),
+
+  http.get(`${API}/ayuda/tickets`, () =>
+    conRoles(["Propietario"], "/api/ayuda/tickets", () => TICKETS)
   ),
 
   http.get(`${API}/configuracion`, () =>

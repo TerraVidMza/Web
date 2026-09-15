@@ -24,7 +24,7 @@ Qué hay que cambiar en este repositorio para que funcione contra el backend tal
 | **6** | Primitivas de UI | ✅ | `components/datos/` y `components/formulario/` |
 | **7** | Pantalla del Auditor (HU-07) | ✅ | `features/auditoria/` |
 | **8** | Notificaciones (HU-35) | ✅ | `features/notificaciones/` — campana con `noLeidas` y pantalla completa |
-| **9** | Módulos restantes | 🟠 | Cerrados Fincas/Cuarteles/Usuarios (HU-05, 06, 08, 09, 11), Operaciones (HU-15, 16, 17) y Vendimia (HU-23, 26, 27, 28). y Telemetría (HU-18, 20, 21, 22). Faltan Inteligencia, Configuración, Ayuda y Mapa. |
+| **9** | Módulos restantes | ✅ | Cerrados Fincas/Cuarteles/Usuarios (HU-05, 06, 08, 09, 11), Operaciones (HU-15, 16, 17) y Vendimia (HU-23, 26, 27, 28). Telemetría, Inteligencia con el ABM de campañas, Configuración y tablas maestras, Ayuda y Mapa. **Las 26 HU de Web están implementadas.** |
 
 **B4 (decimales como string)** se cierra de raíz en `schemas/comunes.ts#decimal`, que acepta los dos formatos —string desde la entidad, número desde el SQL— y rechaza el string vacío para que un campo sin cargar no se vuelva un cero creíble.
 

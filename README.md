@@ -26,6 +26,7 @@ Frontend web de oficina del ERP agrícola TerraVid: dashboard, ABMs (fincas, cua
 - **Axios** como cliente HTTP contra el Backend (NestJS)
 - **Vitest + React Testing Library + MSW** para tests
 - **Recharts** para los gráficos de series de tiempo
+- **Leaflet** + OpenStreetMap para el mapa
 - **Oxlint** para lint (en vez de ESLint)
 
 ## Requisitos
@@ -108,22 +109,35 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/vendimia/cuadrillas` | Cuadrillas | Conectada — ABM con versionado de tarifas (HU-23) |
 | `/remitos/:remitoId` | Detalle del remito | Conectada — imprimible, con la liquidación de bodega (HU-27) |
 | `/cuarteles/:cuartelId/pesajes` | Pesajes del cuartel | Conectada — solo lectura (HU-26) |
-| `/configuracion` (Propietario) | Configuración | Placeholder — pendiente conectar a `GET/PUT /configuracion` |
-| `/ayuda` | Ayuda | Placeholder — pendiente manual/FAQs |
+| `/configuracion` (Propietario) | Parámetros | Conectada — organización, formato regional y SMTP (HU-33) |
+| `/configuracion/catalogos` | Tablas maestras | Conectada — ABM de los cuatro catálogos (HU-34) |
+| `/inteligencia` (Propietario, Agrónomo) | Comparar campañas | Conectada — indicadores y variación con su sentido (HU-31) |
+| `/inteligencia/correlacion` | Correlación | Conectada — sensor contra costo, en gráficos separados (HU-29) |
+| `/inteligencia/recomendaciones` | Recomendaciones | Conectada — resolver como aplicada o descartada (HU-30) |
+| `/inteligencia/campanias` | Campañas | Conectada — ABM del corte temporal del sistema (D-014) |
+| `/mapa` | Mapa | Conectada — fincas y cuarteles con color por estado (HU-10) |
+| `/ayuda` | Manual y FAQ | Conectada — con búsqueda y filtros (HU-36) |
+| `/ayuda/soporte` | Pedir ayuda | Conectada — ticket de soporte (HU-36) |
 
 El acceso por rol sale de una sola tabla, [`src/auth/permisos.ts`](src/auth/permisos.ts), derivada de los `@Roles` reales del backend. De ahí salen el menú, las guardas de ruta y los botones: no hay una segunda lista que pueda divergir.
 
 ## Qué falta
 
-Los bloques 8 a 10 de la Fase 3 del plan de mejoras: Inteligencia agronómica (HU-29, 30, 31), Campañas (31), Configuración y tablas maestras (33, 34), Ayuda (36) y Mapa (10). Los cimientos que necesitan —capa de contrato, primitivas de tabla y formulario, permisos, tests— ya están.
+**Las 26 HU de Web están implementadas.** Lo que queda son las decisiones que el
+plan de mejoras dejó anotadas para después:
+
+- **Playwright** (D-c): un único camino feliz de punta a punta —login → crear
+  finca → crear cuartel—. Los tests actuales son de componente e integración con
+  MSW; un e2e real todavía no hay.
+- **Contraste de la paleta base.** Los colores que agregamos —gráficos,
+  insignias de estado— están validados contra las superficies reales de la
+  aplicación en modo claro y oscuro. Los tokens heredados de shadcn no se
+  auditaron.
+- **Coordenadas.** El mapa funciona, pero en el seed del backend todas las
+  latitudes y longitudes son `null`, así que hasta que se carguen muestra el
+  estado vacío explicándolo.
 
 Dos límites que vienen del backend y conviene tener presentes:
-
-- **Las fincas dadas de baja no se pueden listar.** `GET /fincas` filtra por `activa: true` y no acepta un parámetro para incluirlas, así que la baja es de ida. Los cuarteles sí: la búsqueda de HU-11 los muestra con el filtro de estado.
-- **`GET /configuracion` es solo del Propietario**, así que los demás roles ven la moneda y las unidades por defecto. Ver [`docs/DECISIONS.md`](docs/DECISIONS.md), W-004.
-- **El Auditor no puede descubrir cuarteles por la API.** HU-17 le concede el historial de operaciones por cuartel, pero `GET /cuarteles`, `/cuarteles/buscar` y `/cuarteles/:id` son `@Roles(Propietario, Agrónomo, Capataz)`, así que no tiene de dónde sacar un `cuartelId`. Mientras eso siga así, su única vía de entrada es el enlace que el log de auditoría muestra en los eventos sobre cuarteles.
-- **El listado de insumos y tipos de labor no trae el costo vigente**: vive en `/:id/costos`. Se consulta al abrir el diálogo de costos, para no disparar N+1 requests al dibujar la tabla.
-- **Los remitos y las liquidaciones son dos cosas distintas.** El `totalLiquidacion` de un remito es lo que se le paga a la cuadrilla por cosechar —un costo—; el ingreso del sistema es la liquidación de bodega, que se carga aparte sobre un remito aprobado. Sin ella, el margen bruto del costeo figura como desconocido, no como cero.
 
 ## Documentación
 

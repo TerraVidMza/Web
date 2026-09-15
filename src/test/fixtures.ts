@@ -38,6 +38,9 @@ export const IDS = {
   pesaje: "f6666666-6666-4666-8666-666666666666",
   sensor: "a5111111-1111-4111-8111-111111111111",
   alerta: "a5222222-2222-4222-8222-222222222222",
+  campaniaActual: "b5111111-1111-4111-8111-111111111111",
+  campaniaAnterior: "b5222222-2222-4222-8222-222222222222",
+  recomendacion: "b5333333-3333-4333-8333-333333333333",
 } as const
 
 /**
@@ -335,10 +338,65 @@ export const CONFIGURACION = [
   },
   {
     empresaId: EMPRESA_ID,
+    clave: "smtp_host",
+    valor: "smtp.terravid.demo",
+    updatedById: IDS.propietario,
+    updatedAt: "2026-01-10T12:00:00.000Z",
+  },
+  {
+    // El backend enmascara este valor al leerlo: la pantalla nunca recibe la
+    // contrasena real, y reenviar la mascara la guardaria literalmente.
+    empresaId: EMPRESA_ID,
     clave: "smtp_pass",
     valor: "********",
     updatedById: IDS.propietario,
     updatedAt: "2026-01-10T12:00:00.000Z",
+  },
+]
+
+// Ayuda (HU-36)
+
+export const ARTICULOS = [
+  {
+    id: "c9111111-1111-4111-8111-111111111111",
+    tipo: "manual",
+    modulo: "fincas",
+    titulo: "Cómo dar de alta una finca",
+    contenido: "Entrá a Fincas y usá el botón «Nueva finca».",
+    orden: 1,
+    activo: true,
+    createdAt: "2026-02-01T12:00:00.000Z",
+    updatedAt: null,
+  },
+  {
+    id: "c9222222-2222-4222-8222-222222222222",
+    tipo: "faq",
+    modulo: "vendimia",
+    titulo: "¿Por qué no puedo aprobar un remito?",
+    contenido: "Solo el Propietario y el Agrónomo aprueban remitos.",
+    orden: 2,
+    activo: true,
+    createdAt: "2026-02-01T12:00:00.000Z",
+    updatedAt: null,
+  },
+]
+
+export const TICKETS = [
+  {
+    id: "c9333333-3333-4333-8333-333333333333",
+    usuarioId: IDS.capataz,
+    modulo: "telemetria",
+    descripcion: "El sensor SEN-02 no reporta desde el martes.",
+    appVersion: "1.4.0",
+    estado: "abierto",
+    // El aviso por correo no salio: el ticket existe pero nadie se entero.
+    emailEnviado: false,
+    createdAt: "2026-08-24T10:00:00.000Z",
+    usuario: {
+      id: IDS.capataz,
+      nombre: "Carla Capataz",
+      email: "carla.capataz@terravid.demo",
+    },
   },
 ]
 
