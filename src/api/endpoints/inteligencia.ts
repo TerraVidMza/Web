@@ -1,4 +1,5 @@
-import { crear, modificar, obtener } from "../request"
+import { z } from "zod"
+import { crear, modificar, obtener, reemplazar } from "../request"
 import {
   campaniaONulaSchema,
   campaniaSchema,
@@ -106,5 +107,42 @@ export function compararCampanias(cuartelId: string, params: CompararParams) {
     `/inteligencia-agronomica/comparar-campanias/${cuartelId}`,
     comparacionSchema,
     { params }
+  )
+}
+
+// ─── Metas de cosecha (D-027 del backend) ───────────────────────────────────
+
+export const avanceCosechaSchema = z.object({
+  campania: z
+    .object({ id: z.string(), nombre: z.string(), fechaDesde: z.string(), fechaHasta: z.string() })
+    .nullable(),
+  metaKg: z.number().nullable(),
+  kgCosechados: z.number(),
+  cuarteles: z.array(
+    z.object({
+      cuartelId: z.string(),
+      cuartelNombre: z.string(),
+      fincaId: z.string(),
+      fincaNombre: z.string(),
+      metaKg: z.number().nullable(),
+      kgCosechados: z.number(),
+    })
+  ),
+})
+
+export type AvanceCosecha = z.infer<typeof avanceCosechaSchema>
+
+export function avanceDeCampania(campaniaId: string, fincaId?: string) {
+  return obtener(`/campanias/${campaniaId}/avance`, avanceCosechaSchema, {
+    params: fincaId ? { fincaId } : undefined,
+  })
+}
+
+/** `metaKg = 0` borra la meta del cuartel. */
+export function fijarMetaCosecha(campaniaId: string, cuartelId: string, metaKg: number) {
+  return reemplazar(
+    `/campanias/${campaniaId}/metas/${cuartelId}`,
+    { metaKg },
+    z.object({ cuartelId: z.string(), metaKg: z.number().nullable() })
   )
 }

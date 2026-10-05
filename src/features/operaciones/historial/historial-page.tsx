@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { TableCell, TableHead, TableRow } from "@/components/ui/table"
+import { Ubicacion } from "@/components/datos/ubicacion"
 
 const FILTROS_VACIOS = { desde: "", hasta: "" }
 
@@ -162,6 +163,7 @@ export function HistorialPage() {
             <TableHead className="text-right">Cantidad</TableHead>
             <TableHead>Responsable</TableHead>
             <TableHead>Insumos</TableHead>
+            <TableHead>Ubicación</TableHead>
             {puedeVerCostos && <TableHead className="text-right">Costo</TableHead>}
           </>
         }
@@ -197,6 +199,9 @@ export function HistorialPage() {
             </TableCell>
             <TableCell>
               <Insumos registro={registro} />
+            </TableCell>
+            <TableCell>
+              <Ubicacion latitud={registro.latitud} longitud={registro.longitud} />
             </TableCell>
             {puedeVerCostos && (
               <TableCell className="text-right font-medium tabular-nums">

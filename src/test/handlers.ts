@@ -831,6 +831,23 @@ export const handlers = [
     return HttpResponse.json({ ...CAMPANIAS[0], ...body }, { status: 201 })
   }),
 
+  // D-027: metas de cosecha y avance por cuartel.
+  http.get(`${API}/campanias/:id/avance`, ({ params }) =>
+    HttpResponse.json({
+      campania: { id: params.id, nombre: CAMPANIAS[0].nombre, fechaDesde: CAMPANIAS[0].fechaDesde, fechaHasta: CAMPANIAS[0].fechaHasta },
+      metaKg: 8000,
+      kgCosechados: 2500,
+      cuarteles: [
+        { cuartelId: IDS.cuartel, cuartelNombre: "Cuartel 1", fincaId: IDS.finca, fincaNombre: "Finca El Rosal", metaKg: 8000, kgCosechados: 2500 },
+      ],
+    })
+  ),
+  http.put(`${API}/campanias/:id/metas/:cuartelId`, async ({ params, request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/campanias")
+    const { metaKg } = (await request.json()) as { metaKg: number }
+    return HttpResponse.json({ cuartelId: params.cuartelId, metaKg: metaKg === 0 ? null : metaKg })
+  }),
+
   http.patch(`${API}/campanias/:id/cerrar`, ({ params }) =>
     HttpResponse.json({ ...CAMPANIAS[0], id: params.id, cerrada: true })
   ),

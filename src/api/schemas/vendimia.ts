@@ -81,6 +81,9 @@ export const pesajeSchema = z.object({
   montoLiquidacion: opcional(decimal),
   estadoSync: z.enum(["pendiente", "sincronizado", "error"]),
   errorMessage: opcional(z.string()),
+  /** Ubicación del teléfono al registrar (D-027 del backend); null sin GPS. */
+  latitud: opcional(decimal),
+  longitud: opcional(decimal),
   estado: estadoPesajeSchema,
   cuadrilla: cuadrillaSchema.partial().extend({ nombre: z.string() }).optional(),
 })

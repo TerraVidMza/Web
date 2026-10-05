@@ -480,3 +480,19 @@ sensor activo tiene **Credencial MQTT**. El diálogo:
   caché de React Query (no es una consulta, es una llamada directa).
 
 El contrato completo para el firmware está en `docs/IOT-MQTT.md` del backend.
+
+---
+
+## W-028 — Metas de cosecha en Campañas y ubicación en los historiales
+
+**Decisión (D-027 del backend):**
+
+- **Metas de cosecha:** en *Inteligencia → Campañas*, el menú de cada campaña
+  (Propietario) tiene **Metas de cosecha**. Lista los cuarteles activos con lo
+  cosechado en la campaña y un campo de meta en kg por cuartel; cada fila se
+  guarda por separado. Vaciar el campo y guardar borra la meta. Es lo que usa
+  la app de campo para el indicador de avance.
+- **Ubicación:** los historiales de labores por cuartel y de pesajes muestran
+  una columna *Ubicación* con un enlace a OpenStreetMap (el mismo proveedor que
+  el mapa de fincas). Sin coordenadas —el teléfono no tenía GPS o el usuario no
+  dio permiso— se muestra un guion.
