@@ -22,6 +22,7 @@ import {
   UMBRAL,
   TIPOS_LABOR_CATALOGO,
   CONFIGURACION,
+  EMPRESAS,
   CUARTELES,
   DASHBOARD,
   FINCAS,
@@ -137,6 +138,34 @@ export const handlers = [
   }),
 
   http.post(`${API}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
+
+  // D-025: administración de empresas, solo el Administrador de plataforma.
+  http.get(`${API}/empresas`, () =>
+    conRoles(["Administrador"], "/api/empresas", () => EMPRESAS)
+  ),
+  http.post(`${API}/empresas`, async ({ request }) => {
+    if (rolActual !== "Administrador") return prohibido("/api/empresas")
+    const body = (await request.json()) as {
+      nombre: string
+      cuit: string
+      propietario: { nombre: string; email: string }
+    }
+    if (EMPRESAS.some((e) => e.cuit === body.cuit)) {
+      return HttpResponse.json(
+        { statusCode: 409, path: "/api/empresas", message: "Ya existe una empresa con ese CUIT" },
+        { status: 409 }
+      )
+    }
+    return HttpResponse.json(
+      { id: "e9999999-9999-4999-8999-999999999999", nombre: body.nombre, cuit: body.cuit, activa: true },
+      { status: 201 }
+    )
+  }),
+  http.patch(`${API}/empresas/:id/:accion`, ({ params }) => {
+    if (rolActual !== "Administrador") return prohibido("/api/empresas")
+    const empresa = EMPRESAS.find((e) => e.id === params.id)
+    return HttpResponse.json({ ...empresa, activa: params.accion === "activar" })
+  }),
   http.post(`${API}/auth/cambiar-password`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${API}/auth/forgot-password`, () =>
     HttpResponse.json({
@@ -147,7 +176,12 @@ export const handlers = [
     HttpResponse.json({ message: "Contraseña actualizada correctamente." })
   ),
 
-  http.get(`${API}/dashboard/indicadores`, () => HttpResponse.json(DASHBOARD[rolActual])),
+  // D-025: `@AnyRole()` no incluye al Administrador de plataforma.
+  http.get(`${API}/dashboard/indicadores`, () =>
+    rolActual === "Administrador"
+      ? prohibido("/api/dashboard/indicadores")
+      : HttpResponse.json(DASHBOARD[rolActual])
+  ),
 
   // D-021 del backend: el Auditor también lee fincas y cuarteles.
   http.get(`${API}/fincas`, ({ request }) => {

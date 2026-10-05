@@ -6,6 +6,8 @@ export const rolNombreSchema = z.enum([
   "Capataz",
   "Agronomo",
   "Auditor",
+  // D-025 del backend: da de alta empresas; no pertenece a ninguna cliente.
+  "Administrador",
 ])
 
 export type RolNombre = z.infer<typeof rolNombreSchema>
@@ -18,4 +20,5 @@ export const ETIQUETA_ROL: Record<RolNombre, string> = {
   Capataz: "Capataz",
   Agronomo: "Agrónomo",
   Auditor: "Auditor",
+  Administrador: "Administrador de plataforma",
 }

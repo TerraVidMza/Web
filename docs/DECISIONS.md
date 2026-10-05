@@ -439,3 +439,26 @@ verifica que coincide con los `@Roles` de cada handler.
   backend.
 - El centro de ayuda muestra los tickets con `ayudaAdministracion` y no con
   `usuarios`, que se usaba como sustituto de "es Propietario".
+
+---
+
+## W-026 — El Administrador de plataforma tiene una sola pantalla: Empresas
+
+**Decisión (D-025 del backend):** el rol `Administrador` ve *Empresas* y su
+perfil, y nada más.
+
+- `/empresas` lista las empresas cliente con su CUIT, usuarios activos y
+  estado, y permite crearlas, activarlas y desactivarlas. Desactivar pide
+  confirmación (`DialogoConfirmacion`) y avisa cuántos usuarios se quedan sin
+  acceso.
+- El alta pide el nombre y el email del primer Propietario, **sin
+  contraseña**: el backend genera una temporal y le manda el correo de
+  bienvenida. El CUIT se valida con el mismo formato que el backend
+  (`30-12345678-9`).
+- **La página de inicio depende de los permisos** (`Inicio` en
+  `app-router.tsx`): con `dashboard` se ve el dashboard; sin él, el
+  Administrador va a *Empresas*. Antes el índice mostraba el dashboard a
+  cualquiera, y para el Administrador habría sido un 403.
+- La campana de notificaciones solo se monta con el permiso `notificaciones`:
+  si no, el Administrador consultaría cada minuto un endpoint que le responde
+  403.

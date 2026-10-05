@@ -94,6 +94,7 @@ function FichaUsuario({ compacta = false }: { compacta?: boolean }) {
 }
 
 export function AppLayout() {
+  const { user } = useAuth()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const location = useLocation()
 
@@ -153,7 +154,9 @@ export function AppLayout() {
           </div>
 
           <div className="flex items-center gap-1">
-            <CampanaNotificaciones />
+            {/* El Administrador de plataforma no tiene notificaciones (D-025): sin
+                esto la campana consultaría cada minuto y recibiría 403. */}
+            {puede(user, "notificaciones") && <CampanaNotificaciones />}
             <BotonTema />
           </div>
         </header>

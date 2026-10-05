@@ -45,6 +45,7 @@ export const PERMISOS = [
   "cuadrillasTarifas",
   "inteligencia",
   "appMovil",
+  "empresas",
 ] as const
 
 export type Permiso = (typeof PERMISOS)[number]

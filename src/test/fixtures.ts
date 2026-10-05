@@ -75,9 +75,10 @@ const P = "Propietario"
 const A = "Agronomo"
 const C = "Capataz"
 const U = "Auditor"
+const ADM = "Administrador"
 const TABLA_DEL_BACKEND: Record<Permiso, RolNombre[]> = {
   dashboard: [P, A, C, U],
-  perfil: [P, A, C, U],
+  perfil: [P, A, C, U, ADM],
   notificaciones: [P, A, C, U],
   catalogos: [P, A, C, U],
   campanias: [P, A, C, U],
@@ -107,6 +108,7 @@ const TABLA_DEL_BACKEND: Record<Permiso, RolNombre[]> = {
   cuadrillasTarifas: [P],
   inteligencia: [P, A],
   appMovil: [P, A, C],
+  empresas: [ADM],
 }
 
 export function permisosDelRol(rol: RolNombre): Permiso[] {
@@ -310,7 +312,7 @@ export const LOG_AUDITORIA = [
  * el Auditor la respuesta tiene dos claves y ninguna es la que leían las
  * tarjetas.
  */
-export const DASHBOARD: Record<RolNombre, Record<string, unknown>> = {
+export const DASHBOARD: Record<Exclude<RolNombre, "Administrador">, Record<string, unknown>> = {
   Propietario: {
     rol: "Propietario",
     ...OPERATIVOS,
@@ -861,5 +863,25 @@ export const ALERTAS_PENDIENTES = [
       fincaId: IDS.finca,
       finca: { id: IDS.finca, nombre: "Finca El Rosal" },
     },
+  },
+]
+
+/** `GET /empresas` (D-025 del backend): solo empresas cliente. */
+export const EMPRESAS = [
+  {
+    id: EMPRESA_ID,
+    nombre: "Finca Demo TerraVid",
+    cuit: "20-12345678-9",
+    activa: true,
+    createdAt: "2026-01-01T12:00:00.000Z",
+    usuariosActivos: 4,
+  },
+  {
+    id: "e2222222-2222-4222-8222-222222222222",
+    nombre: "Bodega Los Andes",
+    cuit: "30-71234567-1",
+    activa: false,
+    createdAt: "2026-09-01T12:00:00.000Z",
+    usuariosActivos: 0,
   },
 ]

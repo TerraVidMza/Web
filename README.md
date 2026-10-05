@@ -105,6 +105,7 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/fincas` | Fincas | Conectada — ABM completo (HU-08) |
 | `/fincas/:fincaId/cuarteles` | Cuarteles de una finca | Conectada — ABM completo (HU-09) |
 | `/cuarteles` | Buscar cuarteles | Conectada — búsqueda en toda la empresa, con filtros y orden (HU-11) |
+| `/empresas` (Administrador de plataforma) | Empresas | Conectada — alta de empresa con su primer Propietario, activar y desactivar (D-025 del backend, W-026) |
 | `/usuarios` (Propietario) | Usuarios | Conectada — ABM completo con cambio de rol (HU-05, HU-06) |
 | `/auditoria` (Propietario, Auditor) | Log de auditoría | Conectada — paginada, con filtros (HU-07) |
 | `/notificaciones` | Notificaciones | Conectada — campana con badge y panel (HU-35) |
