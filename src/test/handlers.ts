@@ -770,6 +770,21 @@ export const handlers = [
     return HttpResponse.json({ ...SENSORES[0], ...body })
   }),
 
+  // D-026: credencial MQTT del sensor; la contraseña solo viene acá.
+  http.post(`${API}/sensores/:id/credenciales-mqtt`, ({ params }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) return prohibido("/api/sensores")
+    const sensor = SENSORES.find((x) => x.id === params.id)
+    return HttpResponse.json(
+      {
+        broker: "mqtts://terravid-api.duckdns.org:8883",
+        usuario: sensor?.codigo ?? "SEN-01",
+        password: "clave-mqtt-de-prueba",
+        topico: `terravid/sensores/${sensor?.codigo ?? "SEN-01"}/lecturas`,
+      },
+      { status: 201 }
+    )
+  }),
+
   http.patch(`${API}/sensores/:id/desactivar`, () =>
     HttpResponse.json({ ...SENSORES[0], activo: false })
   ),

@@ -462,3 +462,21 @@ perfil, y nada más.
 - La campana de notificaciones solo se monta con el permiso `notificaciones`:
   si no, el Administrador consultaría cada minuto un endpoint que le responde
   403.
+
+---
+
+## W-027 — La credencial MQTT de un sensor se muestra una sola vez
+
+**Decisión (D-026 del backend):** en *Telemetría → sensores*, el menú de cada
+sensor activo tiene **Credencial MQTT**. El diálogo:
+
+- **No genera nada al abrirse.** Generar invalida la credencial anterior y
+  desconecta al nodo hasta que se cargue la nueva, así que pide un clic
+  explícito y lo explica antes.
+- Muestra broker, usuario, contraseña y tópico, con botones para copiar, y
+  avisa que **la contraseña no se vuelve a mostrar**: el broker guarda solo su
+  hash.
+- Al cerrarse descarta la credencial; no queda en el estado de React ni en el
+  caché de React Query (no es una consulta, es una llamada directa).
+
+El contrato completo para el firmware está en `docs/IOT-MQTT.md` del backend.
