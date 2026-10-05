@@ -116,7 +116,7 @@ export function AccionesRemito({ remito }: { remito: Remito }) {
   const { user } = useAuth()
   const aprobar = useAprobarRemito()
 
-  if (remito.estado !== "borrador" || !puede(user?.rol, "vendimiaAprobacion")) {
+  if (remito.estado !== "borrador" || !puede(user, "vendimiaAprobacion")) {
     return null
   }
 

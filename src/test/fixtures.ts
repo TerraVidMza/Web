@@ -12,6 +12,7 @@
  */
 
 import type { RolNombre } from "@/auth/roles"
+import { PERMISOS, type Permiso } from "@/auth/permisos"
 
 export const EMPRESA_ID = "7126b3f0-2f4c-4a1e-9d0a-2c8f5b1e4a33"
 
@@ -65,8 +66,62 @@ export const ROLES: Array<{ id: string; nombreRol: RolNombre }> = [
   { id: IDS.rolAuditor, nombreRol: "Auditor" },
 ]
 
+/**
+ * Permisos por rol **tal como los manda el backend** (D-024,
+ * `src/common/permisos/permisos.ts`). Vive solo en los tests porque MSW hace
+ * de backend; la aplicación no tiene tabla propia.
+ */
+const P = "Propietario"
+const A = "Agronomo"
+const C = "Capataz"
+const U = "Auditor"
+const TABLA_DEL_BACKEND: Record<Permiso, RolNombre[]> = {
+  dashboard: [P, A, C, U],
+  perfil: [P, A, C, U],
+  notificaciones: [P, A, C, U],
+  catalogos: [P, A, C, U],
+  campanias: [P, A, C, U],
+  ayuda: [P, A, C, U],
+  fincas: [P, A, C, U],
+  fincasEscritura: [P],
+  cuartelesEscritura: [P, A],
+  cuartelesBaja: [P],
+  usuarios: [P],
+  roles: [P],
+  logAuditoria: [P, U],
+  catalogosEscritura: [P],
+  configuracion: [P],
+  campaniasEscritura: [P],
+  ayudaAdministracion: [P],
+  operaciones: [P, A],
+  operacionesBaja: [P],
+  operacionesLectura: [P, A, C],
+  historialLabores: [P, A, C, U],
+  laboresRegistro: [P, A, C],
+  telemetria: [P, A],
+  vendimia: [P, A, C],
+  pesajesRegistro: [P, A, C],
+  vendimiaAprobacion: [P, A],
+  cuadrillas: [P, A, C],
+  cuadrillasEdicion: [P, A],
+  cuadrillasTarifas: [P],
+  inteligencia: [P, A],
+  appMovil: [P, A, C],
+}
+
+export function permisosDelRol(rol: RolNombre): Permiso[] {
+  return PERMISOS.filter((p) => TABLA_DEL_BACKEND[p].includes(rol))
+}
+
 export function usuarioSesion(rol: RolNombre, id = IDS.propietario) {
-  return { id, email: `${rol.toLowerCase()}@terravid.demo`, rol, empresaId: EMPRESA_ID, debeCambiarPassword: false }
+  return {
+    id,
+    email: `${rol.toLowerCase()}@terravid.demo`,
+    rol,
+    empresaId: EMPRESA_ID,
+    debeCambiarPassword: false,
+    permisos: permisosDelRol(rol),
+  }
 }
 
 function usuarioCompleto(nombre: string, rolIndex: number, id: string) {

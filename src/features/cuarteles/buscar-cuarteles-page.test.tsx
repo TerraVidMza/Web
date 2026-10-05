@@ -79,10 +79,11 @@ describe("BuscarCuartelesPage (HU-11)", () => {
     })
   })
 
-  it("le niega la búsqueda al Auditor, como hace el backend", async () => {
+  it("el Auditor también busca cuarteles, en modo lectura (D-021 del backend)", async () => {
     iniciarSesionComo("Auditor")
     renderConProveedores(<BuscarCuartelesPage />)
 
-    expect(await screen.findByText(/No se pudieron cargar los datos/i)).toBeInTheDocument()
+    expect(await screen.findByText("Cuartel 1")).toBeInTheDocument()
+    expect(screen.queryByText(/No se pudieron cargar los datos/i)).not.toBeInTheDocument()
   })
 })

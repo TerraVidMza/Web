@@ -54,8 +54,8 @@ export function RemitosPage() {
 
   const consulta = useRemitos(params)
   const hayFiltros = filtros.estado !== TODOS || filtros.fincaId !== TODOS
-  const puedeGenerar = puede(user?.rol, "vendimia")
-  const puedeAprobar = puede(user?.rol, "vendimiaAprobacion")
+  const puedeGenerar = puede(user, "vendimia")
+  const puedeAprobar = puede(user, "vendimiaAprobacion")
 
   function cambiar(clave: keyof typeof filtros, valor: string) {
     setFiltros((previos) => ({ ...previos, [clave]: valor }))

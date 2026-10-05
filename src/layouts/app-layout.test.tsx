@@ -44,12 +44,14 @@ describe("Menú por rol", () => {
     expect(menu().getByRole("link", { name: "Log de auditoría" })).toBeInTheDocument()
     expect(menu().getByRole("link", { name: "Dashboard" })).toBeInTheDocument()
     expect(menu().getByRole("link", { name: "Notificaciones" })).toBeInTheDocument()
+    // Lectura de fincas y cuarteles (D-021 del backend), que la tabla vieja de
+    // la Web le negaba.
+    for (const lectura of ["Fincas", "Cuarteles", "Mapa"]) {
+      expect(menu().getByRole("link", { name: lectura })).toBeInTheDocument()
+    }
 
-    // Las cuatro que llevaban a un 403:
+    // Las que el backend le rechaza:
     for (const prohibida of [
-      "Fincas",
-      "Cuarteles",
-      "Mapa",
       "Operaciones",
       "Telemetría IoT",
       "Vendimia",

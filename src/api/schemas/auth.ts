@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { rolNombreSchema } from "@/auth/roles"
+import { permisosSchema } from "@/auth/permisos"
 import { fechaHora, uuid } from "./comunes"
 
 /**
@@ -15,6 +16,8 @@ export const usuarioSesionSchema = z.object({
   rol: rolNombreSchema,
   empresaId: uuid,
   debeCambiarPassword: z.boolean(),
+  /** Capacidades del rol, definidas por el backend (D-024). */
+  permisos: permisosSchema,
 })
 
 export type UsuarioSesion = z.infer<typeof usuarioSesionSchema>

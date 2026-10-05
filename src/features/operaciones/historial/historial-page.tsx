@@ -61,7 +61,7 @@ export function HistorialPage() {
   const { user } = useAuth()
 
   const esCapataz = user?.rol === "Capataz"
-  const puedeVerCostos = puede(user?.rol, "operaciones")
+  const puedeVerCostos = puede(user, "operaciones")
 
   const params = useMemo<HistorialLaboresParams>(
     () => ({
@@ -85,7 +85,7 @@ export function HistorialPage() {
     <div className="space-y-6">
       {/* El Auditor no puede listar cuarteles (403), así que este enlace no
           siempre lleva a algún lado para él. Se muestra solo a quien puede. */}
-      {puede(user?.rol, "fincas") && (
+      {puede(user, "fincas") && (
         <Link
           to="/cuarteles"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

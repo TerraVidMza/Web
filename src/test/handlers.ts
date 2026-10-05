@@ -149,8 +149,9 @@ export const handlers = [
 
   http.get(`${API}/dashboard/indicadores`, () => HttpResponse.json(DASHBOARD[rolActual])),
 
+  // D-021 del backend: el Auditor también lee fincas y cuarteles.
   http.get(`${API}/fincas`, ({ request }) => {
-    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz", "Auditor"]
     if (!permitidos.includes(rolActual)) return prohibido("/api/fincas")
     const search = new URL(request.url).searchParams.get("search")
     const fincas = search
@@ -221,12 +222,12 @@ export const handlers = [
   }),
 
   http.get(`${API}/cuarteles`, () =>
-    conRoles(["Propietario", "Agronomo", "Capataz"], "/api/cuarteles", () => CUARTELES)
+    conRoles(["Propietario", "Agronomo", "Capataz", "Auditor"], "/api/cuarteles", () => CUARTELES)
   ),
 
   /** `GET /cuarteles/buscar` (HU-11): otro endpoint, y este si esta paginado. */
   http.get(`${API}/cuarteles/buscar`, ({ request }) => {
-    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz", "Auditor"]
     if (!permitidos.includes(rolActual)) return prohibido("/api/cuarteles/buscar")
 
     const params = new URL(request.url).searchParams
@@ -934,6 +935,15 @@ export const handlers = [
 
   http.get(`${API}/ayuda/tickets`, () =>
     conRoles(["Propietario"], "/api/ayuda/tickets", () => TICKETS)
+  ),
+
+  // D-020 del backend: cualquier rol, solo las claves de presentación.
+  http.get(`${API}/configuracion/preferencias`, () =>
+    HttpResponse.json(
+      CONFIGURACION.filter((c) =>
+        ["nombre_organizacion", "moneda", "unidades", "zona_horaria"].includes(c.clave)
+      )
+    )
   ),
 
   http.get(`${API}/configuracion`, () =>

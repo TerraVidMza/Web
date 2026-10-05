@@ -27,7 +27,7 @@ export function CuartelesPage() {
   const formato = useFormato()
 
   const cuarteles = consulta.data ?? []
-  const puedeCrear = puede(user?.rol, "cuartelesEscritura")
+  const puedeCrear = puede(user, "cuartelesEscritura")
 
   return (
     <div className="space-y-6">

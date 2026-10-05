@@ -39,7 +39,7 @@ export function RemitoDetallePage() {
   const { user } = useAuth()
   const formato = useFormato()
 
-  const puedeVerLiquidacion = puede(user?.rol, "vendimiaAprobacion")
+  const puedeVerLiquidacion = puede(user, "vendimiaAprobacion")
   const liquidacion = useLiquidacion(
     remitoId ?? "",
     puedeVerLiquidacion && remito?.estado === "aprobado"

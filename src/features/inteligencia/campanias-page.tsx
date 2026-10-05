@@ -202,7 +202,7 @@ export function CampaniasPage() {
   const formato = useFormato()
 
   const campanias = consulta.data ?? []
-  const puedeEscribir = puede(user?.rol, "campaniasEscritura")
+  const puedeEscribir = puede(user, "campaniasEscritura")
   const hayActual = campanias.some((c) => esActual(c))
 
   return (

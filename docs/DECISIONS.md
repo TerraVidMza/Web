@@ -67,6 +67,8 @@ crear cuartel): un e2e que cubra todo se vuelve lento y nadie lo corre.
 
 ## W-004 — Moneda, unidades y zona horaria salen de `GET /configuracion`
 
+> **Resuelto (2026-10-05):** la Web pasó a leer `GET /configuracion/preferencias`, que el backend abre a cualquier rol (D-020). Ahora todos los roles ven el formato de su empresa. Lo que sigue describe la limitación original.
+
 **Decisión (D-e):** los formateadores toman `moneda`, `unidades` y
 `zona_horaria` de la configuración de la empresa, con fallback a `es-AR` / `ARS`
 / `America/Argentina/Mendoza`.
@@ -152,6 +154,8 @@ red que parece un problema del backend.
 ---
 
 ## W-011 — El Auditor entra al historial por cuartel desde el log de auditoría
+
+> **Resuelto (2026-10-05):** el backend le habilitó al Auditor la lectura de fincas y cuarteles (D-021), y la Web lo refleja desde que los permisos vienen del backend (W-025). El Auditor ya tiene Fincas, Cuarteles y Mapa en modo lectura. Lo que sigue describe la limitación original.
 
 **Contexto:** HU-17 le concede al Auditor el historial de operaciones por cuartel
 —`GET /registro-labor/cuartel/:id` lo incluye explícitamente en sus `@Roles`—,
@@ -408,3 +412,30 @@ cuando ambos estén bajo `terravid.com`.
 **Configuración:** las duraciones las define el Propietario en
 *Configuración → Parámetros → Sesiones* (5–60 minutos y 1–30 días). La pantalla
 no habilita «Guardar» fuera de rango, y el backend lo valida igual.
+
+---
+
+## W-025 — Los permisos vienen del backend; la Web no tiene tabla propia
+
+**Decisión (D-024 del backend):** qué muestra la Web a cada usuario se decide
+con `user.permisos`, la lista que el backend manda en el login, en cada
+renovación de sesión y en `GET /usuarios/me`. `puede(user, permiso)` consulta
+esa lista.
+
+**Por qué:** la tabla que tenía la Web (`PERMISOS`, rol → secciones) era una
+copia a mano de los `@Roles` del backend y ya se había desfasado. Seguía
+negándole al Auditor fincas, cuarteles y el mapa cuando el backend se los había
+habilitado (D-021). Ahora la tabla vive en el backend, y un test de allá
+verifica que coincide con los `@Roles` de cada handler.
+
+**Detalles:**
+- `src/auth/permisos.ts` solo enumera los nombres conocidos. Un permiso nuevo
+  del backend que esta versión no conoce se descarta al validar la sesión: no
+  la rompe.
+- Las sesiones guardadas antes de este cambio no traen `permisos`: no pasan la
+  validación y piden iniciar sesión otra vez (una sola vez, al desplegar).
+- Los handlers de MSW siguen simulando los 403 por rol. La tabla espejo vive
+  solo en `src/test/fixtures.ts` (`permisosDelRol`), porque ahí MSW hace de
+  backend.
+- El centro de ayuda muestra los tickets con `ayudaAdministracion` y no con
+  `usuarios`, que se usaba como sustituto de "es Propietario".

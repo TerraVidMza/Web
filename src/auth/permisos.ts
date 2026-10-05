@@ -1,99 +1,64 @@
-import { RolNombre } from "./roles"
-
-const { Propietario, Agronomo, Capataz, Auditor } = RolNombre
-
-const TODOS = [Propietario, Agronomo, Capataz, Auditor] as const
+import { z } from "zod"
 
 /**
- * Qué rol puede ver cada sección. **Copia única** de los `@Roles` del backend.
- *
- * Antes esta información estaba tres veces: `NAV_ITEMS` en el layout,
- * `RoleRoute` en el router y los `@Roles` de cada controller. Ya divergían: el
- * menú le ofrecía al Auditor Fincas, Operaciones, Telemetría y Vendimia, y las
- * cuatro le devolvían 403.
+ * Permisos que define el backend (D-024) y llegan con la sesión en
+ * `user.permisos`. La Web **no tiene tabla propia**: la que tenía (W-025)
+ * copiaba los `@Roles` de cada controller y ya se había desfasado —le negaba
+ * fincas al Auditor cuando el backend se las había habilitado—.
  *
  * Esto decide **qué se muestra**, no qué se permite: la autoridad sigue siendo
- * el `RolesGuard` del backend, que es fail-closed. Si las dos se contradicen,
- * el que tiene razón es el backend y esta tabla es la que hay que corregir.
+ * el `RolesGuard` del backend, que es fail-closed.
  *
- * Cada entrada cita el controller del que sale, para que la verificación sea
- * un `grep` y no una arqueología.
+ * La lista de nombres es la de `src/common/permisos/permisos.ts` del backend.
+ * Un permiso nuevo allá que no esté acá se ignora: no rompe la sesión, solo no
+ * se usa hasta que una pantalla lo necesite.
  */
-export const PERMISOS = {
-  /** `DashboardController` — `@AnyRole()`. El contenido varía por rol (HU-32). */
-  dashboard: TODOS,
+export const PERMISOS = [
+  "dashboard",
+  "perfil",
+  "notificaciones",
+  "catalogos",
+  "campanias",
+  "ayuda",
+  "fincas",
+  "fincasEscritura",
+  "cuartelesEscritura",
+  "cuartelesBaja",
+  "usuarios",
+  "roles",
+  "logAuditoria",
+  "catalogosEscritura",
+  "configuracion",
+  "campaniasEscritura",
+  "ayudaAdministracion",
+  "operaciones",
+  "operacionesBaja",
+  "operacionesLectura",
+  "historialLabores",
+  "laboresRegistro",
+  "telemetria",
+  "vendimia",
+  "pesajesRegistro",
+  "vendimiaAprobacion",
+  "cuadrillas",
+  "cuadrillasEdicion",
+  "cuadrillasTarifas",
+  "inteligencia",
+  "appMovil",
+] as const
 
-  /** `FincasController.findAll` / `CuartelesController` — sin Auditor (HU-07). */
-  fincas: [Propietario, Agronomo, Capataz],
-  /** `FincasController.create/update/desactivar`. */
-  fincasEscritura: [Propietario],
-  /** `CuartelesController.create/update`. */
-  cuartelesEscritura: [Propietario, Agronomo],
-  /** `CuartelesController.desactivar`. */
-  cuartelesBaja: [Propietario],
+export type Permiso = (typeof PERMISOS)[number]
 
-  /** `UsuariosController` — `@Roles(PROPIETARIO)` en todo salvo `me`. */
-  usuarios: [Propietario],
-  /** `RolesController.findAll`. */
-  roles: [Propietario],
-  /** `UsuariosController.findMe/updateMe` — `@AnyRole()` (HU-04). */
-  perfil: TODOS,
+const conocidos = new Set<string>(PERMISOS)
 
-  /** `LogAuditoriaController` — la única pantalla del Auditor (HU-07). */
-  logAuditoria: [Propietario, Auditor],
+/** Lista de permisos de la sesión, sin los nombres que esta versión no conoce. */
+export const permisosSchema = z
+  .array(z.string())
+  .transform((lista) => lista.filter((p): p is Permiso => conocidos.has(p)))
 
-  /** `NotificacionesController` — `@AnyRole()`, cada uno ve las suyas (HU-35). */
-  notificaciones: TODOS,
-
-  /** `CatalogoItemController.findByTipo` — `@AnyRole()`. */
-  catalogos: TODOS,
-  /** `CatalogoItemController` escritura — tablas maestras (HU-34). */
-  catalogosEscritura: [Propietario],
-
-  /** `ConfiguracionController` (HU-33). */
-  configuracion: [Propietario],
-
-  /** `CampaniasController` lectura — `@AnyRole()` (HU-31). */
-  campanias: TODOS,
-  campaniasEscritura: [Propietario],
-
-  /**
-   * `RegistroLaborController.costeo` / `InsumosController` / `TipoLaborController`.
-   * El historial por cuartel (HU-17) sí incluye al Auditor, pero la sección
-   * Operaciones arranca en el costeo, que es `@Roles(PROPIETARIO, AGRONOMO)`.
-   */
-  operaciones: [Propietario, Agronomo],
-  /** `RegistroLaborController.findByCuartel` — el Auditor entra acá (HU-17). */
-  historialLabores: [Propietario, Agronomo, Capataz, Auditor],
-
-  /** `SensoresController` / `LecturasIotController` / `AlertasIotController`. */
-  telemetria: [Propietario, Agronomo],
-
-  /** `RemitosController.findAll` / `PesajeVendimiaController` — lectura. */
-  vendimia: [Propietario, Agronomo, Capataz],
-  /** `RemitosController.aprobar/rechazar/liquidacion`: dato económico. */
-  vendimiaAprobacion: [Propietario, Agronomo],
-  /** `CuadrillasController.findByFinca/create` — el Capataz da de alta (HU-23). */
-  cuadrillas: [Propietario, Agronomo, Capataz],
-  /** `CuadrillasController.update` y `:id/tarifas` (GET). */
-  cuadrillasEdicion: [Propietario, Agronomo],
-  /**
-   * `CuadrillasController.setTarifa` y `desactivar`. La tarifa a destajo la
-   * fija **solo** el Propietario (HU-23), y el service descarta el campo si
-   * quien crea la cuadrilla tiene otro rol.
-   */
-  cuadrillasTarifas: [Propietario],
-
-  /** `InteligenciaAgronomicaController` — `@Roles` a nivel de clase. */
-  inteligencia: [Propietario, Agronomo],
-
-  /** `AyudaController.articulos` / `tickets` POST — `@AnyRole()` (HU-36). */
-  ayuda: TODOS,
-} as const satisfies Record<string, readonly RolNombre[]>
-
-export type Permiso = keyof typeof PERMISOS
-
-export function puede(rol: RolNombre | undefined, permiso: Permiso): boolean {
-  if (!rol) return false
-  return (PERMISOS[permiso] as readonly RolNombre[]).includes(rol)
+export function puede(
+  user: { permisos: readonly Permiso[] } | null | undefined,
+  permiso: Permiso
+): boolean {
+  return user?.permisos.includes(permiso) ?? false
 }

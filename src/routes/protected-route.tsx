@@ -59,7 +59,7 @@ export function ProtectedRoute() {
 export function RoleRoute({ permiso }: { permiso: Permiso }) {
   const { user } = useAuth()
 
-  if (!puede(user?.rol, permiso)) {
+  if (!puede(user, permiso)) {
     return <Navigate to="/" replace />
   }
 

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 
 function Navegacion({ alNavegar }: { alNavegar?: () => void }) {
   const { user } = useAuth()
-  const visibles = NAV_ITEMS.filter((item) => puede(user?.rol, item.permiso))
+  const visibles = NAV_ITEMS.filter((item) => puede(user, item.permiso))
 
   return (
     <nav aria-label="Secciones" className="flex-1 space-y-1 p-3">
