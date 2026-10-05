@@ -13,6 +13,8 @@ export const claveConfiguracionSchema = z.enum([
   "smtp_user",
   "smtp_pass",
   "smtp_from",
+  "sesion_access_minutos",
+  "sesion_refresh_dias",
 ])
 
 export type ClaveConfiguracion = z.infer<typeof claveConfiguracionSchema>

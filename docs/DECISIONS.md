@@ -366,3 +366,45 @@ empresa no llega a tener tantos artículos como para justificar pedirla. Los dos
 filtros que el backend sí valida se le mandan a él —antes llegaban crudos y un
 `?modulo=vendmia` con typo devolvía 200 con la lista vacía, o sea un centro de
 ayuda sin artículos y nada que explicara por qué—.
+
+---
+
+## W-024 — La sesión se renueva sola con el refresh token
+
+**Decisión (D-023 del backend):** el access token dura pocos minutos (15 por
+defecto) y el cliente lo renueva en segundo plano con el refresh token, sin
+pedir la contraseña.
+
+- La sesión guardada en `localStorage` (`terravid.sesion`) suma
+  `refreshToken` y `refreshExpiresAt`. Una sesión con el access vencido sigue
+  siendo válida mientras el refresh no venza: el cliente la renueva antes del
+  primer request.
+- **Renovación anticipada:** si al access le queda menos de un minuto, el
+  interceptor de request renueva antes de mandar.
+- **Renovación ante 401:** si igual llega un 401, se renueva y se reintenta el
+  request **una sola vez**. Si el token recién renovado también da 401, la
+  sesión está muerta y se cierra (sin bucle).
+- **Un único `/auth/refresh` en vuelo.** El backend rota el refresh token en
+  cada uso y trata un segundo uso como robo: cinco consultas de React Query que
+  reciben 401 a la vez esperan la misma renovación.
+- **Varias pestañas.** Comparten el `localStorage`. Si dos renuevan a la vez,
+  una pierde (el backend tiene 30 s de gracia y no castiga la sesión), y la que
+  pierde toma el token que guardó la otra.
+- **Sin conexión no se expulsa a nadie:** si la renovación falla por red, el
+  request falla con su error y la sesión queda como estaba. Solo un 401 del
+  propio `/auth/refresh` cierra la sesión.
+- La renovación usa axios directo, no `cliente`: no lleva `Authorization` y no
+  puede pasar por el interceptor que la dispara.
+- `AuthContext` escucha las renovaciones de la propia pestaña
+  (`alCambiarSesion`) y toma el usuario que devuelve el backend: un cambio de
+  rol se ve sin recargar.
+
+**Contra qué alternativa:** guardar el refresh token en una cookie `httpOnly`
+lo protegería de un XSS, pero exige que backend y frontend compartan dominio (o
+CORS con credenciales) y protección CSRF. Hoy la API vive en
+`terravid-api.duckdns.org` y la Web en Firebase Hosting. Queda anotado para
+cuando ambos estén bajo `terravid.com`.
+
+**Configuración:** las duraciones las define el Propietario en
+*Configuración → Parámetros → Sesiones* (5–60 minutos y 1–30 días). La pantalla
+no habilita «Guardar» fuera de rango, y el backend lo valida igual.

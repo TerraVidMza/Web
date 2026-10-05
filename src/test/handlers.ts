@@ -107,11 +107,32 @@ export const handlers = [
     sesionComo(rol)
     return HttpResponse.json({
       accessToken: tokenDePrueba(),
+      expiresIn: 900,
+      refreshToken: "refresh-de-prueba",
+      refreshExpiresAt: "2099-01-01T00:00:00.000Z",
       user: {
         ...usuarioSesion(rol),
         email: body.email,
         debeCambiarPassword: body.email.startsWith("temporal"),
       },
+    })
+  }),
+
+  // Rota el refresh token como el backend (D-023): cada respuesta trae uno nuevo.
+  http.post(`${API}/auth/refresh`, async ({ request }) => {
+    const { refreshToken } = (await request.json()) as { refreshToken: string }
+    if (!refreshToken.startsWith("refresh-")) {
+      return HttpResponse.json(
+        { statusCode: 401, path: "/api/auth/refresh", message: "Sesión inválida" },
+        { status: 401 }
+      )
+    }
+    return HttpResponse.json({
+      accessToken: tokenDePrueba(),
+      expiresIn: 900,
+      refreshToken: `${refreshToken}-r`,
+      refreshExpiresAt: "2099-01-01T00:00:00.000Z",
+      user: usuarioSesion(rolActual),
     })
   }),
 

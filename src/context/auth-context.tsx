@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import * as authApi from "@/api/endpoints/auth"
 import { registrarManejadorDeSesionExpirada } from "@/api/client"
 import {
+  alCambiarSesion,
   alCambiarSesionEnOtraPestania,
   borrarSesion,
   guardarSesion,
@@ -78,6 +79,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   /**
+   * Renovaciones hechas por el cliente HTTP en esta pestaña (W-024): el backend
+   * devuelve el usuario actualizado —rol, contraseña temporal— y la interfaz lo
+   * toma sin esperar a la próxima recarga.
+   */
+  useEffect(
+    () =>
+      alCambiarSesion((sesion) => {
+        if (sesion) setUser(sesion.user)
+      }),
+    []
+  )
+
+  /**
    * El 401 ya no recarga la página (B7): navegar mantiene el cache de React
    * Query, conserva la ruta a la que el usuario quería ir y no hace parpadear
    * la aplicación.
@@ -92,14 +106,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const login = useCallback(async (email: string, password: string) => {
-    const { accessToken, user: usuario } = await authApi.login(email, password)
-    guardarSesion({ accessToken, user: usuario })
+    const { accessToken, refreshToken, refreshExpiresAt, user: usuario } = await authApi.login(
+      email,
+      password
+    )
+    guardarSesion({ accessToken, refreshToken, refreshExpiresAt, user: usuario })
     setUser(usuario)
     return usuario
   }, [])
 
   /**
-   * `POST /auth/logout` revoca el `jti` del token (HU-02): ya no es cosmético.
+   * `POST /auth/logout` revoca el `jti` del token (HU-02) y la sesión completa,
+   * con su refresh token (D-023 del backend): ya no es cosmético.
    *
    * Antes el fallo se tragaba en silencio. Ahora se reintenta una vez y, si
    * tampoco sale, se avisa: la sesión local se cierra igual —dejar al usuario

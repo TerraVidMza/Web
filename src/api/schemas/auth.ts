@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { rolNombreSchema } from "@/auth/roles"
-import { uuid } from "./comunes"
+import { fechaHora, uuid } from "./comunes"
 
 /**
  * Usuario de la sesión, tal como lo devuelve `POST /auth/login`.
@@ -19,8 +19,16 @@ export const usuarioSesionSchema = z.object({
 
 export type UsuarioSesion = z.infer<typeof usuarioSesionSchema>
 
+/**
+ * Respuesta de `POST /auth/login` y de `POST /auth/refresh` (D-023 del
+ * backend): un access token corto, su vida en segundos y un refresh token
+ * opaco que se cambia por uno nuevo en cada renovación.
+ */
 export const loginResponseSchema = z.object({
   accessToken: z.string().min(1),
+  expiresIn: z.number().int().positive(),
+  refreshToken: z.string().min(1),
+  refreshExpiresAt: fechaHora,
   user: usuarioSesionSchema,
 })
 
