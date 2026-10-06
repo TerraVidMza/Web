@@ -115,8 +115,8 @@ frena cuatro HU por algo que el design system ya resuelve.
 - **Recharts:** declarativa, integra bien con shadcn, y las tres pantallas que
   la necesitan piden series de tiempo y barras, nada exótico.
 
-Las dos ya están instaladas y en uso (nota de 2026-10-06; el texto original decía que se agregarían con el módulo que las use),
-para no cargar el bundle con librerías sin pantalla.
+Se agregaron recién con el módulo que las usa, para no cargar el bundle con
+librerías sin pantalla. Hoy las dos están instaladas y en uso (2026-10-06).
 
 ---
 
