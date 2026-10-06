@@ -135,12 +135,10 @@ El acceso por rol **lo define el backend**: los permisos llegan con la sesión (
 
 ## Qué falta
 
-**Las 26 HU de Web están implementadas.** Lo que queda son las decisiones que el
+**Las 26 HU de Web están implementadas.** Cobertura de los tests de componente: 84 % de líneas, con piso de 70 % en el CI (`npm run test:cov`). Lo que queda son las decisiones que el
 plan de mejoras dejó anotadas para después:
 
-- **Playwright** (D-c): un único camino feliz de punta a punta —login → crear
-  finca → crear cuartel—. Los tests actuales son de componente e integración con
-  MSW; un e2e real todavía no hay.
+- ~~**Playwright** (D-c)~~ — hecho ([W-029](docs/DECISIONS.md)): un camino feliz por rol contra el backend real, con `npm run test:e2e`.
 - **Contraste de la paleta base.** Los colores que agregamos —gráficos,
   insignias de estado— están validados contra las superficies reales de la
   aplicación en modo claro y oscuro. Los tokens heredados de shadcn no se

@@ -496,3 +496,42 @@ El contrato completo para el firmware está en `docs/IOT-MQTT.md` del backend.
   una columna *Ubicación* con un enlace a OpenStreetMap (el mismo proveedor que
   el mapa de fincas). Sin coordenadas —el teléfono no tenía GPS o el usuario no
   dio permiso— se muestra un guion.
+
+---
+
+## W-029 — Cobertura con piso de 70 % y Playwright por rol contra el backend real
+
+**Decisión:**
+
+- **Cobertura** (`npm run test:cov`, Vitest con `@vitest/coverage-v8`): piso
+  de 70 % de líneas y sentencias configurado en `vite.config.ts`. El CI corre
+  los tests con cobertura y falla si baja. Se excluyen los componentes de
+  shadcn (`src/components/ui/`, código de terceros copiado), `main.tsx` y los
+  datos de prueba. Hoy: **84,5 % de líneas**.
+- **Playwright** (`npm run test:e2e`, carpeta `e2e/`): un camino feliz por rol
+  contra el **backend real**, con la Web compilada y servida por
+  `vite preview`:
+  - Propietario: crea una finca y un cuartel en ella (el camino que pedía D-c).
+  - Agrónomo: ve Operaciones y Telemetría, no ve Usuarios.
+  - Capataz: entra a Vendimia y su dashboard carga (era el 500 de D-028 del
+    backend).
+  - Auditor: log de auditoría y fincas en modo lectura.
+  - Administrador de plataforma: crea una empresa.
+
+  Los usuarios de cada rol se crean por la API con la sesión del Propietario
+  del seed, con un sufijo por corrida: no dependen de datos fijos.
+
+**Por qué Playwright no corre en el CI de este repo:** necesita la API y
+PostgreSQL. El CI del backend ya levanta ambos para sus e2e; sumar ahí la Web
+es el paso siguiente si se quiere automatizar. El CI de la Web sí verifica que
+las pruebas compilen (`npm run typecheck:e2e`).
+
+**Cómo correrlo:**
+
+```bash
+# Backend/: base, migraciones, seed y API
+docker compose up -d db && npm run migration:run && npm run seed && npm run start:dev
+# Web/
+npx playwright install chromium   # una sola vez
+npm run test:e2e
+```
