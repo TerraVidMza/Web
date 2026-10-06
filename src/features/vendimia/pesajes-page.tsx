@@ -7,6 +7,7 @@ import { EstadoBadge } from "@/components/datos/estado-badge"
 import { TablaPaginada } from "@/components/datos/tabla-paginada"
 import { usePaginacion } from "@/components/datos/paginacion"
 import { TableCell, TableHead, TableRow } from "@/components/ui/table"
+import { Ubicacion } from "@/components/datos/ubicacion"
 
 /**
  * Pesajes de un cuartel, en modo lectura (HU-26, decisión D-d).
@@ -61,6 +62,7 @@ export function PesajesPage() {
             <TableHead className="text-right">A pagar</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Remito</TableHead>
+            <TableHead>Ubicación</TableHead>
           </>
         }
         fila={(pesaje) => (
@@ -92,6 +94,9 @@ export function PesajesPage() {
               ) : (
                 <span className="text-sm text-muted-foreground">—</span>
               )}
+            </TableCell>
+            <TableCell>
+              <Ubicacion latitud={pesaje.latitud} longitud={pesaje.longitud} />
             </TableCell>
           </TableRow>
         )}

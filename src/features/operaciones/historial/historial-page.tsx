@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { TableCell, TableHead, TableRow } from "@/components/ui/table"
+import { Ubicacion } from "@/components/datos/ubicacion"
 
 const FILTROS_VACIOS = { desde: "", hasta: "" }
 
@@ -61,7 +62,7 @@ export function HistorialPage() {
   const { user } = useAuth()
 
   const esCapataz = user?.rol === "Capataz"
-  const puedeVerCostos = puede(user?.rol, "operaciones")
+  const puedeVerCostos = puede(user, "operaciones")
 
   const params = useMemo<HistorialLaboresParams>(
     () => ({
@@ -85,7 +86,7 @@ export function HistorialPage() {
     <div className="space-y-6">
       {/* El Auditor no puede listar cuarteles (403), así que este enlace no
           siempre lleva a algún lado para él. Se muestra solo a quien puede. */}
-      {puede(user?.rol, "fincas") && (
+      {puede(user, "fincas") && (
         <Link
           to="/cuarteles"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -162,6 +163,7 @@ export function HistorialPage() {
             <TableHead className="text-right">Cantidad</TableHead>
             <TableHead>Responsable</TableHead>
             <TableHead>Insumos</TableHead>
+            <TableHead>Ubicación</TableHead>
             {puedeVerCostos && <TableHead className="text-right">Costo</TableHead>}
           </>
         }
@@ -197,6 +199,9 @@ export function HistorialPage() {
             </TableCell>
             <TableCell>
               <Insumos registro={registro} />
+            </TableCell>
+            <TableCell>
+              <Ubicacion latitud={registro.latitud} longitud={registro.longitud} />
             </TableCell>
             {puedeVerCostos && (
               <TableCell className="text-right font-medium tabular-nums">

@@ -31,7 +31,7 @@ export function FincasPage() {
   const formato = useFormato()
 
   const fincas = consulta.data ?? []
-  const puedeEscribir = puede(user?.rol, "fincasEscritura")
+  const puedeEscribir = puede(user, "fincasEscritura")
 
   return (
     <div className="space-y-6">

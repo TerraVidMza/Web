@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react"
 import { z } from "zod"
 import { toast } from "sonner"
-import { CalendarCheck, CalendarClock, Loader2, MoreHorizontal, Pencil, Plus } from "lucide-react"
+import { CalendarCheck, CalendarClock, Loader2, MoreHorizontal, Pencil, Plus, Target } from "lucide-react"
 import {
   useActualizarCampania,
   useCambiarCierreCampania,
@@ -54,6 +54,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { MetasCosechaDialog } from "./metas-cosecha-dialog"
 
 const schema = z
   .object({
@@ -202,7 +203,7 @@ export function CampaniasPage() {
   const formato = useFormato()
 
   const campanias = consulta.data ?? []
-  const puedeEscribir = puede(user?.rol, "campaniasEscritura")
+  const puedeEscribir = puede(user, "campaniasEscritura")
   const hayActual = campanias.some((c) => esActual(c))
 
   return (
@@ -296,6 +297,13 @@ export function CampaniasPage() {
                                 Editar
                               </DropdownMenuItem>
                             </CampaniaDialog>
+
+                            <MetasCosechaDialog campania={campania}>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Target className="size-4" aria-hidden="true" />
+                                Metas de cosecha
+                              </DropdownMenuItem>
+                            </MetasCosechaDialog>
 
                             <DialogoConfirmacion
                               titulo={

@@ -74,4 +74,28 @@ describe("CampaniasPage (D-014)", () => {
       screen.queryByRole("button", { name: /Acciones de/i })
     ).not.toBeInTheDocument()
   })
+
+  it("carga la meta de cosecha de un cuartel (D-027 del backend)", async () => {
+    iniciarSesionComo("Propietario")
+    const metas: Array<{ url: string; cuerpo: unknown }> = []
+    servidor.events.on("request:start", async ({ request }) => {
+      if (request.method === "PUT" && request.url.includes("/metas/")) {
+        metas.push({ url: request.url, cuerpo: await request.clone().json() })
+      }
+    })
+    const { usuario } = renderConProveedores(<CampaniasPage />)
+
+    const fila = within((await screen.findByText(`${ANIO}/${ANIO + 1}`)).closest("tr")!)
+    await usuario.click(fila.getByRole("button", { name: /acciones de/i }))
+    await usuario.click(await screen.findByRole("menuitem", { name: /metas de cosecha/i }))
+
+    const campo = await screen.findByLabelText(/meta en kg de cuartel 1/i)
+    expect(campo).toHaveValue(8000)
+    await usuario.clear(campo)
+    await usuario.type(campo, "9500")
+    await usuario.click(screen.getByRole("button", { name: /^guardar$/i }))
+
+    await waitFor(() => expect(metas).toHaveLength(1))
+    expect(metas[0].cuerpo).toEqual({ metaKg: 9500 })
+  })
 })

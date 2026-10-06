@@ -26,13 +26,21 @@ describe("AppRouter", () => {
     expect(screen.queryByRole("heading", { name: /^Fincas$/i })).not.toBeInTheDocument()
   })
 
-  it("el Auditor que entra a /fincas por URL termina en el dashboard, no en un 403", async () => {
+  it("el Auditor que entra a /vendimia por URL termina en el dashboard, no en un 403", async () => {
     iniciarSesionComo("Auditor")
-    renderConProveedores(<AppRouter />, { ruta: "/fincas" })
+    renderConProveedores(<AppRouter />, { ruta: "/vendimia" })
 
     // `RoleRoute` lo redirige antes de que se dispare la request que el backend
     // rechazaría.
     expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+  })
+
+  it("el Auditor entra a Fincas en modo lectura (D-021 del backend)", async () => {
+    iniciarSesionComo("Auditor")
+    renderConProveedores(<AppRouter />, { ruta: "/fincas" })
+
+    expect(await screen.findByRole("heading", { name: /^Fincas$/i })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /nueva finca/i })).not.toBeInTheDocument()
   })
 
   it("el Auditor sí llega a su pantalla", async () => {
@@ -68,11 +76,11 @@ describe("AppRouter", () => {
     expect(await screen.findByRole("heading", { name: /Buscar cuarteles/i })).toBeInTheDocument()
   })
 
-  it("el Auditor tampoco entra a la búsqueda de cuarteles", async () => {
+  it("el Auditor entra a la búsqueda de cuarteles (W-011 resuelto por D-021)", async () => {
     iniciarSesionComo("Auditor")
     renderConProveedores(<AppRouter />, { ruta: "/cuarteles" })
 
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: /Buscar cuarteles/i })).toBeInTheDocument()
   })
 
   it("Operaciones abre en el costeo y tiene una ruta por vista", async () => {
@@ -181,8 +189,7 @@ describe("AppRouter", () => {
     iniciarSesionComo("Auditor")
     renderConProveedores(<AppRouter />, { ruta: "/mapa" })
 
-    // El Auditor no puede listar fincas, así que tampoco entra al mapa.
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: /mapa/i })).toBeInTheDocument()
   })
 
   it("una ruta inexistente muestra el 404", async () => {

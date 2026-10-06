@@ -1,5 +1,12 @@
 # Plan de mejoras — Frontend Web
 
+> **Documento histórico (revisión 2026-10-06).** Todas sus fases están cerradas.
+> Las cifras y tablas de estado describen el momento en que se escribió, no el
+> presente: hoy hay 245 tests de componente con 84 % de cobertura y cinco
+> pruebas de Playwright por rol (W-029). El estado vigente está en el
+> [README](../README.md) y en [`DECISIONS.md`](DECISIONS.md).
+
+
 Auditoría del frontend completo y plan de trabajo. Complementa el [plan de adaptación al backend](PLAN-ADAPTACION-BACKEND.md): ese cubre *qué está roto contra la API*, este cubre *cómo está construida la aplicación*.
 
 **Punto de partida, medido:** 54 archivos, **3.628 líneas** (de las cuales ~1.900 son componentes de shadcn sin modificar), **5 pantallas conectadas y 5 placeholders**, `npm run build` limpio, `npm run lint` con 5 warnings y 0 errores, bundle de **611 kB** en un solo chunk, **0 tests**, **0 workflows de CI**.

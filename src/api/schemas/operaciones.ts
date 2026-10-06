@@ -179,6 +179,9 @@ export const registroLaborSchema = z.object({
   createdAtLocal: opcional(fechaHora),
   createdAt: fechaHora,
   syncedAt: opcional(fechaHora),
+  /** Ubicación del teléfono al registrar (D-027 del backend); null sin GPS. */
+  latitud: opcional(decimal),
+  longitud: opcional(decimal),
   tipoLabor: tipoLaborSchema.pick({ id: true, nombre: true, unidadMedida: true }).optional(),
   usuario: z.object({ id: uuid, nombre: z.string(), email: z.email() }).optional(),
   detalles: z.array(detalleInsumoSchema).default([]),

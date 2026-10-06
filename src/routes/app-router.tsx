@@ -1,5 +1,7 @@
 import { Suspense, lazy } from "react"
-import { Route, Routes } from "react-router-dom"
+import { Navigate, Route, Routes } from "react-router-dom"
+import { useAuth } from "@/context/auth-context"
+import { puede } from "@/auth/permisos"
 import { AppLayout } from "@/layouts/app-layout"
 import { ProtectedRoute, RoleRoute } from "./protected-route"
 import { EsqueletoDePagina } from "./esqueleto-de-pagina"
@@ -41,6 +43,9 @@ const BuscarCuartelesPage = lazy(() =>
   import("@/features/cuarteles/buscar-cuarteles-page").then((m) => ({
     default: m.BuscarCuartelesPage,
   }))
+)
+const EmpresasPage = lazy(() =>
+  import("@/features/empresas/empresas-page").then((m) => ({ default: m.EmpresasPage }))
 )
 const UsuariosPage = lazy(() =>
   import("@/features/usuarios/usuarios-page").then((m) => ({ default: m.UsuariosPage }))
@@ -165,6 +170,17 @@ const NotFoundPage = lazy(() =>
   import("@/features/not-found/not-found-page").then((m) => ({ default: m.NotFoundPage }))
 )
 
+/**
+ * La página de inicio depende de lo que el usuario puede hacer: el
+ * Administrador de plataforma no tiene dashboard (D-025 del backend) y su
+ * pantalla es la de empresas.
+ */
+function Inicio() {
+  const { user } = useAuth()
+  if (puede(user, "dashboard")) return <DashboardPage />
+  return <Navigate to={puede(user, "empresas") ? "/empresas" : "/perfil"} replace />
+}
+
 export function AppRouter() {
   return (
     <Suspense fallback={<EsqueletoDePagina />}>
@@ -182,7 +198,7 @@ export function AppRouter() {
           <Route path="/cambiar-password" element={<CambiarPasswordPage />} />
 
           <Route element={<AppLayout />}>
-            <Route index element={<DashboardPage />} />
+            <Route index element={<Inicio />} />
             <Route path="perfil" element={<PerfilPage />} />
             <Route path="notificaciones" element={<NotificacionesPage />} />
             <Route path="ayuda" element={<AyudaLayout />}>
@@ -255,6 +271,9 @@ export function AppRouter() {
               <Route path="auditoria" element={<AuditoriaPage />} />
             </Route>
 
+            <Route element={<RoleRoute permiso="empresas" />}>
+              <Route path="empresas" element={<EmpresasPage />} />
+            </Route>
             <Route element={<RoleRoute permiso="usuarios" />}>
               <Route path="usuarios" element={<UsuariosPage />} />
             </Route>

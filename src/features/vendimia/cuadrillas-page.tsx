@@ -209,7 +209,7 @@ function TarifasDialog({
   const fijar = useFijarTarifa()
   const formato = useFormato()
   const { user } = useAuth()
-  const puedeFijar = puede(user?.rol, "cuadrillasTarifas")
+  const puedeFijar = puede(user, "cuadrillasTarifas")
 
   const form = useFormularioApi({
     schema: tarifaSchema,
@@ -357,10 +357,10 @@ export function CuadrillasPage() {
   const desactivar = useDesactivarCuadrilla()
   const { user } = useAuth()
 
-  const puedeCrear = puede(user?.rol, "cuadrillas")
-  const puedeEditar = puede(user?.rol, "cuadrillasEdicion")
-  const puedeVerTarifas = puede(user?.rol, "cuadrillasEdicion")
-  const puedeDarDeBaja = puede(user?.rol, "cuadrillasTarifas")
+  const puedeCrear = puede(user, "cuadrillas")
+  const puedeEditar = puede(user, "cuadrillasEdicion")
+  const puedeVerTarifas = puede(user, "cuadrillasEdicion")
+  const puedeDarDeBaja = puede(user, "cuadrillasTarifas")
   const cuadrillas = consulta.data ?? []
 
   return (

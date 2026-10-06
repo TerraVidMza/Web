@@ -1,5 +1,12 @@
 # Plan de adaptación al backend
 
+> **Documento histórico (revisión 2026-10-06).** Todas sus fases están cerradas.
+> Las cifras y tablas de estado describen el momento en que se escribió, no el
+> presente: hoy hay 245 tests de componente con 84 % de cobertura y cinco
+> pruebas de Playwright por rol (W-029). El estado vigente está en el
+> [README](../README.md) y en [`DECISIONS.md`](DECISIONS.md).
+
+
 Qué hay que cambiar en este repositorio para que funcione contra el backend tal como quedó después del cierre del [plan de mejoras del Backend](https://github.com/TerraVidMza/Backend/blob/develop/docs/specs/PLAN-MEJORAS.md) (36/36 HU, 10 problemas sistémicos resueltos, 8 decisiones de producto tomadas).
 
 **Método:** no se auditó leyendo el código del backend. Se levantó la API contra PostgreSQL real, se hizo login con el usuario del seed y se llamó cada endpoint que este repo consume, comparando la respuesta real contra el tipo que el frontend declara. Cada afirmación de la sección 1 tiene abajo la respuesta que devolvió la API.

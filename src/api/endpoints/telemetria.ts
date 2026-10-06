@@ -45,6 +45,23 @@ export function actualizarSensor(id: string, input: ActualizarSensorInput) {
   return modificar(`/sensores/${id}`, input, sensorSchema)
 }
 
+/**
+ * Credencial MQTT del sensor (D-026 del backend). Cada llamada la regenera y
+ * la anterior deja de servir; la contraseña solo viene en esta respuesta.
+ */
+export const credencialMqttSchema = z.object({
+  broker: z.string().nullable(),
+  usuario: z.string(),
+  password: z.string(),
+  topico: z.string(),
+})
+
+export type CredencialMqtt = z.infer<typeof credencialMqttSchema>
+
+export function generarCredencialMqtt(sensorId: string) {
+  return crear(`/sensores/${sensorId}/credenciales-mqtt`, undefined, credencialMqttSchema)
+}
+
 export function desactivarSensor(id: string) {
   return modificar(`/sensores/${id}/desactivar`, undefined, sensorSchema)
 }

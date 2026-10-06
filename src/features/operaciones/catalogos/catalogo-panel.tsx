@@ -58,8 +58,8 @@ export function CatalogoPanel({ config }: { config: CatalogoCosteableConfig }) {
   const items = consulta.data ?? []
   // `@Roles(PROPIETARIO, AGRONOMO)` para crear y editar; la baja es solo del
   // Propietario. Son los decoradores del controller, no una regla inventada.
-  const puedeEscribir = puede(user?.rol, "operaciones")
-  const puedeDarDeBaja = puede(user?.rol, "catalogosEscritura")
+  const puedeEscribir = puede(user, "operaciones")
+  const puedeDarDeBaja = puede(user, "catalogosEscritura")
 
   return (
     <div className="space-y-4">

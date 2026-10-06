@@ -1,6 +1,6 @@
 # TerraVid — Web
 
-Frontend web de oficina del ERP agrícola TerraVid: dashboard, ABMs (fincas, cuarteles, usuarios), log de auditoría y notificaciones. Pensado para uso del Propietario, el Agrónomo y el Auditor desde una computadora, a diferencia de la app [`Mobile`](https://github.com/TerraVidMza/Mobile) (uso en campo, offline-first).
+Frontend web de oficina del ERP agrícola TerraVid: dashboard, ABMs (fincas, cuarteles, usuarios), log de auditoría y notificaciones. Lo usan los cuatro roles —Propietario, Agrónomo, Capataz y Auditor— desde una computadora, cada uno con lo que su rol le permite, a diferencia de la app [`Mobile`](https://github.com/TerraVidMza/Mobile) (uso en campo, offline-first).
 
 > **Alcance:** este repositorio contiene únicamente el **Frontend web**. El proyecto TerraVid se organiza en 4 repositorios dentro de la organización [TerraVidMza](https://github.com/TerraVidMza) en GitHub.
 
@@ -59,6 +59,17 @@ La app queda disponible en `http://localhost:5173`.
 
 Los tres primeros son lo que corre [el workflow de CI](.github/workflows/ci.yml) en cada PR.
 
+## Despliegue (Producción)
+
+El frontend se despliega automáticamente en **Google Cloud (Firebase Hosting)**.
+La integración continua y entrega continua (CI/CD) está configurada mediante GitHub Actions:
+
+- Al hacer un *push* a la rama `main` o al activar el workflow manualmente, se ejecuta [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+- El workflow compila la aplicación para producción inyectando la variable `VITE_API_URL` (gestión de URLs del backend mediante GitHub Secrets).
+- Finalmente, se despliega a Firebase usando credenciales de Service Account configuradas en el repositorio.
+
+La configuración de enrutamiento y servidor estático se encuentra en `firebase.json`.
+
 ## Cómo está organizado
 
 ```
@@ -94,6 +105,7 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/fincas` | Fincas | Conectada — ABM completo (HU-08) |
 | `/fincas/:fincaId/cuarteles` | Cuarteles de una finca | Conectada — ABM completo (HU-09) |
 | `/cuarteles` | Buscar cuarteles | Conectada — búsqueda en toda la empresa, con filtros y orden (HU-11) |
+| `/empresas` (Administrador de plataforma) | Empresas | Conectada — alta de empresa con su primer Propietario, activar y desactivar (D-025 del backend, W-026) |
 | `/usuarios` (Propietario) | Usuarios | Conectada — ABM completo con cambio de rol (HU-05, HU-06) |
 | `/auditoria` (Propietario, Auditor) | Log de auditoría | Conectada — paginada, con filtros (HU-07) |
 | `/notificaciones` | Notificaciones | Conectada — campana con badge y panel (HU-35) |
@@ -119,16 +131,14 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/ayuda` | Manual y FAQ | Conectada — con búsqueda y filtros (HU-36) |
 | `/ayuda/soporte` | Pedir ayuda | Conectada — ticket de soporte (HU-36) |
 
-El acceso por rol sale de una sola tabla, [`src/auth/permisos.ts`](src/auth/permisos.ts), derivada de los `@Roles` reales del backend. De ahí salen el menú, las guardas de ruta y los botones: no hay una segunda lista que pueda divergir.
+El acceso por rol **lo define el backend**: los permisos llegan con la sesión (`user.permisos`, D-024 del backend) y de ahí salen el menú, las guardas de ruta y los botones. La Web no tiene tabla propia ([W-025](docs/DECISIONS.md)); [`src/auth/permisos.ts`](src/auth/permisos.ts) solo enumera los nombres conocidos.
 
 ## Qué falta
 
-**Las 26 HU de Web están implementadas.** Lo que queda son las decisiones que el
+**Las 26 HU de Web están implementadas.** Cobertura de los tests de componente: 84 % de líneas, con piso de 70 % en el CI (`npm run test:cov`). Lo que queda son las decisiones que el
 plan de mejoras dejó anotadas para después:
 
-- **Playwright** (D-c): un único camino feliz de punta a punta —login → crear
-  finca → crear cuartel—. Los tests actuales son de componente e integración con
-  MSW; un e2e real todavía no hay.
+- ~~**Playwright** (D-c)~~ — hecho ([W-029](docs/DECISIONS.md)): un camino feliz por rol contra el backend real, con `npm run test:e2e`.
 - **Contraste de la paleta base.** Los colores que agregamos —gráficos,
   insignias de estado— están validados contra las superficies reales de la
   aplicación en modo claro y oscuro. Los tokens heredados de shadcn no se
@@ -137,7 +147,7 @@ plan de mejoras dejó anotadas para después:
   latitudes y longitudes son `null`, así que hasta que se carguen muestra el
   estado vacío explicándolo.
 
-Dos límites que vienen del backend y conviene tener presentes:
+Los dos límites del backend que figuraban acá ya están resueltos: el formato regional llega a todos los roles por `GET /configuracion/preferencias` ([W-004](docs/DECISIONS.md)) y el Auditor lee fincas y cuarteles ([W-011](docs/DECISIONS.md), D-021 del backend).
 
 ## Documentación
 
