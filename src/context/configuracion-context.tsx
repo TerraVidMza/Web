@@ -1,7 +1,6 @@
 import { createContext, use, useMemo, type ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { listarConfiguracion } from "@/api/endpoints/configuracion"
-import { puede } from "@/auth/permisos"
+import { listarPreferencias } from "@/api/endpoints/configuracion"
 import { useAuth } from "./auth-context"
 import {
   PREFERENCIAS_POR_DEFECTO,
@@ -29,20 +28,19 @@ const ConfiguracionContext = createContext<ConfiguracionContextValue | null>(nul
 /**
  * Preferencias de la empresa (HU-33), con fallback a `es-AR`/`ARS`.
  *
- * **`GET /configuracion` es `@Roles(PROPIETARIO)`**, así que un Agrónomo o un
- * Capataz nunca la reciben: para ellos la consulta ni se lanza y se usan los
- * valores por defecto. Es una limitación real del contrato actual —lo correcto
- * sería que el backend expusiera el subconjunto no sensible a cualquier rol— y
- * queda anotada acá para que no se descubra como un bug de formato.
+ * Salen de `GET /configuracion/preferencias`, que el backend abre a cualquier
+ * rol (D-020). Antes se leían de `GET /configuracion`, que es solo del
+ * Propietario: el resto de los roles veía siempre los valores por defecto
+ * (W-004, resuelto).
  */
 export function ConfiguracionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const habilitada = puede(user?.rol, "configuracion")
 
   const { data } = useQuery({
-    queryKey: ["configuracion"],
-    queryFn: listarConfiguracion,
-    enabled: habilitada,
+    // Bajo el prefijo "configuracion": guardar un parámetro invalida las dos.
+    queryKey: ["configuracion", "preferencias"],
+    queryFn: listarPreferencias,
+    enabled: user !== null,
     // Cambia una vez cada varios meses: refetchearla en cada navegación es
     // gastar una request por pantalla para leer lo mismo.
     staleTime: 30 * 60 * 1000,

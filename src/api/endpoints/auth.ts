@@ -6,11 +6,12 @@ export function login(email: string, password: string) {
 }
 
 /**
- * Invalida el token del lado del servidor (HU-02).
+ * Invalida la sesión del lado del servidor (HU-02).
  *
- * Deja de ser cosmético: el backend revoca el `jti`, así que si esta llamada
- * falla el token **sigue vivo sus 8 horas** aunque el cliente limpie el
- * `localStorage`. Por eso quien la use tiene que enterarse del fallo.
+ * Deja de ser cosmético: el backend revoca el `jti` y el refresh token, así que
+ * si esta llamada falla la sesión **se puede seguir renovando** aunque el
+ * cliente limpie el `localStorage`. Por eso quien la use tiene que enterarse
+ * del fallo.
  */
 export function logout() {
   return sinRespuesta("POST", "/auth/logout")

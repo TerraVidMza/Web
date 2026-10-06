@@ -17,6 +17,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Los de Playwright corren aparte, contra el backend real (W-029).
+    exclude: ['e2e/**', 'node_modules/**'],
     css: false,
     // `threads` y no el `forks` por defecto: en Windows los workers por proceso
     // no llegan a responder el handshake y toda la corrida muere con
@@ -30,6 +32,21 @@ export default defineConfig({
     // que la URL sea la misma que interceptan los handlers de MSW.
     env: {
       VITE_API_URL: 'http://localhost:3000/api',
+    },
+    // W-029: piso de 70 % de líneas. Se excluyen los componentes de shadcn
+    // (código de terceros copiado), el punto de entrada y los datos de prueba.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/test/**',
+        'src/components/ui/**',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+      ],
+      reporter: ['text-summary', 'json-summary', 'lcov'],
+      thresholds: { lines: 70, statements: 70 },
     },
   },
 })

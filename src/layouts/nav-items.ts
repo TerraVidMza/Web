@@ -12,6 +12,7 @@ import {
   Settings,
   Sparkles,
   Users,
+  Building2,
   type LucideIcon,
 } from "lucide-react"
 import type { Permiso } from "@/auth/permisos"
@@ -39,6 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/inteligencia", label: "Inteligencia", icon: Sparkles, permiso: "inteligencia" },
   { to: "/auditoria", label: "Log de auditoría", icon: ScrollText, permiso: "logAuditoria" },
   { to: "/notificaciones", label: "Notificaciones", icon: Bell, permiso: "notificaciones" },
+  { to: "/empresas", label: "Empresas", icon: Building2, permiso: "empresas" },
   { to: "/usuarios", label: "Usuarios", icon: Users, permiso: "usuarios" },
   { to: "/configuracion", label: "Configuración", icon: Settings, permiso: "configuracion" },
   { to: "/ayuda", label: "Ayuda", icon: HelpCircle, permiso: "ayuda" },

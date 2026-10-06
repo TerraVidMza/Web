@@ -99,4 +99,31 @@ describe("SensoresPage (HU-18)", () => {
 
     expect(await screen.findByText(/No se pudieron cargar los datos/i)).toBeInTheDocument()
   })
+
+  describe("credencial MQTT (D-026 del backend)", () => {
+    it("no la genera al abrir: pide confirmar porque invalida la anterior", async () => {
+      iniciarSesionComo("Agronomo")
+      const generadas: string[] = []
+      servidor.events.on("request:start", ({ request }) => {
+        if (request.url.endsWith("/credenciales-mqtt")) generadas.push(request.url)
+      })
+      const { usuario } = renderConProveedores(<SensoresPage />)
+      await elegirFinca(usuario)
+
+      const fila = within((await screen.findByText("SEN-01")).closest("tr")!)
+      await usuario.click(fila.getByRole("button", { name: /acciones de SEN-01/i }))
+      await usuario.click(await screen.findByRole("menuitem", { name: /credencial mqtt/i }))
+
+      const dialogo = await screen.findByRole("dialog")
+      expect(within(dialogo).getByText(/deja de servir/i)).toBeInTheDocument()
+      expect(generadas).toHaveLength(0)
+
+      await usuario.click(within(dialogo).getByRole("button", { name: /generar credencial/i }))
+
+      expect(await within(dialogo).findByText("clave-mqtt-de-prueba")).toBeInTheDocument()
+      expect(within(dialogo).getByText("terravid/sensores/SEN-01/lecturas")).toBeInTheDocument()
+      expect(within(dialogo).getByText(/no se vuelve a mostrar/i)).toBeInTheDocument()
+      expect(generadas).toHaveLength(1)
+    })
+  })
 })

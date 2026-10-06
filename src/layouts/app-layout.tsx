@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 
 function Navegacion({ alNavegar }: { alNavegar?: () => void }) {
   const { user } = useAuth()
-  const visibles = NAV_ITEMS.filter((item) => puede(user?.rol, item.permiso))
+  const visibles = NAV_ITEMS.filter((item) => puede(user, item.permiso))
 
   return (
     <nav aria-label="Secciones" className="flex-1 space-y-1 p-3">
@@ -94,6 +94,7 @@ function FichaUsuario({ compacta = false }: { compacta?: boolean }) {
 }
 
 export function AppLayout() {
+  const { user } = useAuth()
   const [menuAbierto, setMenuAbierto] = useState(false)
   const location = useLocation()
 
@@ -153,7 +154,9 @@ export function AppLayout() {
           </div>
 
           <div className="flex items-center gap-1">
-            <CampanaNotificaciones />
+            {/* El Administrador de plataforma no tiene notificaciones (D-025): sin
+                esto la campana consultaría cada minuto y recibiría 403. */}
+            {puede(user, "notificaciones") && <CampanaNotificaciones />}
             <BotonTema />
           </div>
         </header>

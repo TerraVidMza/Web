@@ -67,6 +67,8 @@ crear cuartel): un e2e que cubra todo se vuelve lento y nadie lo corre.
 
 ## W-004 — Moneda, unidades y zona horaria salen de `GET /configuracion`
 
+> **Resuelto (2026-10-05):** la Web pasó a leer `GET /configuracion/preferencias`, que el backend abre a cualquier rol (D-020). Ahora todos los roles ven el formato de su empresa. Lo que sigue describe la limitación original.
+
 **Decisión (D-e):** los formateadores toman `moneda`, `unidades` y
 `zona_horaria` de la configuración de la empresa, con fallback a `es-AR` / `ARS`
 / `America/Argentina/Mendoza`.
@@ -113,8 +115,8 @@ frena cuatro HU por algo que el design system ya resuelve.
 - **Recharts:** declarativa, integra bien con shadcn, y las tres pantallas que
   la necesitan piden series de tiempo y barras, nada exótico.
 
-Ninguna de las dos está instalada todavía: se agregan con el módulo que las use,
-para no cargar el bundle con librerías sin pantalla.
+Se agregaron recién con el módulo que las usa, para no cargar el bundle con
+librerías sin pantalla. Hoy las dos están instaladas y en uso (2026-10-06).
 
 ---
 
@@ -152,6 +154,8 @@ red que parece un problema del backend.
 ---
 
 ## W-011 — El Auditor entra al historial por cuartel desde el log de auditoría
+
+> **Resuelto (2026-10-05):** el backend le habilitó al Auditor la lectura de fincas y cuarteles (D-021), y la Web lo refleja desde que los permisos vienen del backend (W-025). El Auditor ya tiene Fincas, Cuarteles y Mapa en modo lectura. Lo que sigue describe la limitación original.
 
 **Contexto:** HU-17 le concede al Auditor el historial de operaciones por cuartel
 —`GET /registro-labor/cuartel/:id` lo incluye explícitamente en sus `@Roles`—,
@@ -366,3 +370,168 @@ empresa no llega a tener tantos artículos como para justificar pedirla. Los dos
 filtros que el backend sí valida se le mandan a él —antes llegaban crudos y un
 `?modulo=vendmia` con typo devolvía 200 con la lista vacía, o sea un centro de
 ayuda sin artículos y nada que explicara por qué—.
+
+---
+
+## W-024 — La sesión se renueva sola con el refresh token
+
+**Decisión (D-023 del backend):** el access token dura pocos minutos (15 por
+defecto) y el cliente lo renueva en segundo plano con el refresh token, sin
+pedir la contraseña.
+
+- La sesión guardada en `localStorage` (`terravid.sesion`) suma
+  `refreshToken` y `refreshExpiresAt`. Una sesión con el access vencido sigue
+  siendo válida mientras el refresh no venza: el cliente la renueva antes del
+  primer request.
+- **Renovación anticipada:** si al access le queda menos de un minuto, el
+  interceptor de request renueva antes de mandar.
+- **Renovación ante 401:** si igual llega un 401, se renueva y se reintenta el
+  request **una sola vez**. Si el token recién renovado también da 401, la
+  sesión está muerta y se cierra (sin bucle).
+- **Un único `/auth/refresh` en vuelo.** El backend rota el refresh token en
+  cada uso y trata un segundo uso como robo: cinco consultas de React Query que
+  reciben 401 a la vez esperan la misma renovación.
+- **Varias pestañas.** Comparten el `localStorage`. Si dos renuevan a la vez,
+  una pierde (el backend tiene 30 s de gracia y no castiga la sesión), y la que
+  pierde toma el token que guardó la otra.
+- **Sin conexión no se expulsa a nadie:** si la renovación falla por red, el
+  request falla con su error y la sesión queda como estaba. Solo un 401 del
+  propio `/auth/refresh` cierra la sesión.
+- La renovación usa axios directo, no `cliente`: no lleva `Authorization` y no
+  puede pasar por el interceptor que la dispara.
+- `AuthContext` escucha las renovaciones de la propia pestaña
+  (`alCambiarSesion`) y toma el usuario que devuelve el backend: un cambio de
+  rol se ve sin recargar.
+
+**Contra qué alternativa:** guardar el refresh token en una cookie `httpOnly`
+lo protegería de un XSS, pero exige que backend y frontend compartan dominio (o
+CORS con credenciales) y protección CSRF. Hoy la API vive en
+`terravid-api.duckdns.org` y la Web en Firebase Hosting. Queda anotado para
+cuando ambos estén bajo `terravid.com`.
+
+**Configuración:** las duraciones las define el Propietario en
+*Configuración → Parámetros → Sesiones* (5–60 minutos y 1–30 días). La pantalla
+no habilita «Guardar» fuera de rango, y el backend lo valida igual.
+
+---
+
+## W-025 — Los permisos vienen del backend; la Web no tiene tabla propia
+
+**Decisión (D-024 del backend):** qué muestra la Web a cada usuario se decide
+con `user.permisos`, la lista que el backend manda en el login, en cada
+renovación de sesión y en `GET /usuarios/me`. `puede(user, permiso)` consulta
+esa lista.
+
+**Por qué:** la tabla que tenía la Web (`PERMISOS`, rol → secciones) era una
+copia a mano de los `@Roles` del backend y ya se había desfasado. Seguía
+negándole al Auditor fincas, cuarteles y el mapa cuando el backend se los había
+habilitado (D-021). Ahora la tabla vive en el backend, y un test de allá
+verifica que coincide con los `@Roles` de cada handler.
+
+**Detalles:**
+- `src/auth/permisos.ts` solo enumera los nombres conocidos. Un permiso nuevo
+  del backend que esta versión no conoce se descarta al validar la sesión: no
+  la rompe.
+- Las sesiones guardadas antes de este cambio no traen `permisos`: no pasan la
+  validación y piden iniciar sesión otra vez (una sola vez, al desplegar).
+- Los handlers de MSW siguen simulando los 403 por rol. La tabla espejo vive
+  solo en `src/test/fixtures.ts` (`permisosDelRol`), porque ahí MSW hace de
+  backend.
+- El centro de ayuda muestra los tickets con `ayudaAdministracion` y no con
+  `usuarios`, que se usaba como sustituto de "es Propietario".
+
+---
+
+## W-026 — El Administrador de plataforma tiene una sola pantalla: Empresas
+
+**Decisión (D-025 del backend):** el rol `Administrador` ve *Empresas* y su
+perfil, y nada más.
+
+- `/empresas` lista las empresas cliente con su CUIT, usuarios activos y
+  estado, y permite crearlas, activarlas y desactivarlas. Desactivar pide
+  confirmación (`DialogoConfirmacion`) y avisa cuántos usuarios se quedan sin
+  acceso.
+- El alta pide el nombre y el email del primer Propietario, **sin
+  contraseña**: el backend genera una temporal y le manda el correo de
+  bienvenida. El CUIT se valida con el mismo formato que el backend
+  (`30-12345678-9`).
+- **La página de inicio depende de los permisos** (`Inicio` en
+  `app-router.tsx`): con `dashboard` se ve el dashboard; sin él, el
+  Administrador va a *Empresas*. Antes el índice mostraba el dashboard a
+  cualquiera, y para el Administrador habría sido un 403.
+- La campana de notificaciones solo se monta con el permiso `notificaciones`:
+  si no, el Administrador consultaría cada minuto un endpoint que le responde
+  403.
+
+---
+
+## W-027 — La credencial MQTT de un sensor se muestra una sola vez
+
+**Decisión (D-026 del backend):** en *Telemetría → sensores*, el menú de cada
+sensor activo tiene **Credencial MQTT**. El diálogo:
+
+- **No genera nada al abrirse.** Generar invalida la credencial anterior y
+  desconecta al nodo hasta que se cargue la nueva, así que pide un clic
+  explícito y lo explica antes.
+- Muestra broker, usuario, contraseña y tópico, con botones para copiar, y
+  avisa que **la contraseña no se vuelve a mostrar**: el broker guarda solo su
+  hash.
+- Al cerrarse descarta la credencial; no queda en el estado de React ni en el
+  caché de React Query (no es una consulta, es una llamada directa).
+
+El contrato completo para el firmware está en `docs/IOT-MQTT.md` del backend.
+
+---
+
+## W-028 — Metas de cosecha en Campañas y ubicación en los historiales
+
+**Decisión (D-027 del backend):**
+
+- **Metas de cosecha:** en *Inteligencia → Campañas*, el menú de cada campaña
+  (Propietario) tiene **Metas de cosecha**. Lista los cuarteles activos con lo
+  cosechado en la campaña y un campo de meta en kg por cuartel; cada fila se
+  guarda por separado. Vaciar el campo y guardar borra la meta. Es lo que usa
+  la app de campo para el indicador de avance.
+- **Ubicación:** los historiales de labores por cuartel y de pesajes muestran
+  una columna *Ubicación* con un enlace a OpenStreetMap (el mismo proveedor que
+  el mapa de fincas). Sin coordenadas —el teléfono no tenía GPS o el usuario no
+  dio permiso— se muestra un guion.
+
+---
+
+## W-029 — Cobertura con piso de 70 % y Playwright por rol contra el backend real
+
+**Decisión:**
+
+- **Cobertura** (`npm run test:cov`, Vitest con `@vitest/coverage-v8`): piso
+  de 70 % de líneas y sentencias configurado en `vite.config.ts`. El CI corre
+  los tests con cobertura y falla si baja. Se excluyen los componentes de
+  shadcn (`src/components/ui/`, código de terceros copiado), `main.tsx` y los
+  datos de prueba. Hoy: **84,5 % de líneas**.
+- **Playwright** (`npm run test:e2e`, carpeta `e2e/`): un camino feliz por rol
+  contra el **backend real**, con la Web compilada y servida por
+  `vite preview`:
+  - Propietario: crea una finca y un cuartel en ella (el camino que pedía D-c).
+  - Agrónomo: ve Operaciones y Telemetría, no ve Usuarios.
+  - Capataz: entra a Vendimia y su dashboard carga (era el 500 de D-028 del
+    backend).
+  - Auditor: log de auditoría y fincas en modo lectura.
+  - Administrador de plataforma: crea una empresa.
+
+  Los usuarios de cada rol se crean por la API con la sesión del Propietario
+  del seed, con un sufijo por corrida: no dependen de datos fijos.
+
+**Por qué Playwright no corre en el CI de este repo:** necesita la API y
+PostgreSQL. El CI del backend ya levanta ambos para sus e2e; sumar ahí la Web
+es el paso siguiente si se quiere automatizar. El CI de la Web sí verifica que
+las pruebas compilen (`npm run typecheck:e2e`).
+
+**Cómo correrlo:**
+
+```bash
+# Backend/: base, migraciones, seed y API
+docker compose up -d db && npm run migration:run && npm run seed && npm run start:dev
+# Web/
+npx playwright install chromium   # una sola vez
+npm run test:e2e
+```

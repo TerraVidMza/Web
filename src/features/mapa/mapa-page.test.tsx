@@ -55,10 +55,10 @@ describe("MapaPage (HU-10)", () => {
     ).toBeInTheDocument()
   })
 
-  it("le niega el mapa al Auditor, que no puede listar fincas", async () => {
+  it("el Auditor también ve el mapa: puede listar fincas (D-021 del backend)", async () => {
     iniciarSesionComo("Auditor")
     renderConProveedores(<MapaPage />)
 
-    expect(await screen.findByText(/No se pudieron cargar los datos/i)).toBeInTheDocument()
+    expect(await screen.findByText(/1 sin coordenadas cargadas/i)).toBeInTheDocument()
   })
 })

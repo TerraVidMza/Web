@@ -24,9 +24,9 @@ import {
 export function AccionesCuartel({ cuartel }: { cuartel: Cuartel }) {
   const { user } = useAuth()
   const desactivar = useDesactivarCuartel()
-  const puedeEditar = puede(user?.rol, "cuartelesEscritura")
-  const puedeDarDeBaja = puede(user?.rol, "cuartelesBaja")
-  const puedeVerHistorial = puede(user?.rol, "historialLabores")
+  const puedeEditar = puede(user, "cuartelesEscritura")
+  const puedeDarDeBaja = puede(user, "cuartelesBaja")
+  const puedeVerHistorial = puede(user, "historialLabores")
 
   if (!puedeEditar && !puedeDarDeBaja && !puedeVerHistorial) return null
 

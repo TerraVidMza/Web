@@ -45,8 +45,8 @@ export function SoportePage() {
   const crear = useCrearTicket()
   const { user } = useAuth()
   const formato = useFormato()
-  const esPropietario = puede(user?.rol, "usuarios")
-  const tickets = useTickets(esPropietario)
+  const puedeVerTickets = puede(user, "ayudaAdministracion")
+  const tickets = useTickets(puedeVerTickets)
 
   const form = useFormularioApi({
     schema,
@@ -134,7 +134,7 @@ export function SoportePage() {
         </CardContent>
       </Card>
 
-      {esPropietario && (
+      {puedeVerTickets && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Pedidos de tu empresa</CardTitle>

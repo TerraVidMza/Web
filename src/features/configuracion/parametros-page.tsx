@@ -21,10 +21,13 @@ interface CampoConfig {
   ayuda?: string
   tipo?: "text" | "password" | "email" | "number"
   placeholder?: string
+  /** Rango aceptado por el backend; fuera de él no se habilita «Guardar». */
+  min?: number
+  max?: number
 }
 
 /**
- * Los diez parámetros de HU-33, agrupados por lo que hacen.
+ * Los parámetros de HU-33, agrupados por lo que hacen.
  *
  * Tres de ellos no son cosméticos: `moneda`, `unidades` y `zona_horaria`
  * alimentan los formateadores de toda la aplicación (W-004), y `zona_horaria`
@@ -77,7 +80,41 @@ const GRUPOS: Array<{ titulo: string; descripcion: string; campos: CampoConfig[]
       { clave: "smtp_from", etiqueta: "Remitente", placeholder: "TerraVid <no-reply@…>" },
     ],
   },
+  {
+    titulo: "Sesiones",
+    descripcion:
+      "Cuánto dura una sesión. Los cambios aplican a los próximos inicios de sesión y renovaciones.",
+    campos: [
+      {
+        clave: "sesion_access_minutos",
+        etiqueta: "Renovación automática (minutos)",
+        tipo: "number",
+        min: 5,
+        max: 60,
+        placeholder: "15",
+        ayuda:
+          "Cada cuánto la aplicación renueva la credencial en segundo plano, sin que el usuario lo note. Entre 5 y 60; por defecto 15.",
+      },
+      {
+        clave: "sesion_refresh_dias",
+        etiqueta: "Vencimiento por inactividad (días)",
+        tipo: "number",
+        min: 1,
+        max: 30,
+        placeholder: "7",
+        ayuda:
+          "Días sin usar el sistema después de los cuales hay que volver a ingresar la contraseña. Entre 1 y 30; por defecto 7. Un capataz que pasa días en campo sin señal necesita un valor alto.",
+      },
+    ],
+  },
 ]
+
+function fueraDeRango(campo: CampoConfig, valor: string): boolean {
+  if (campo.min === undefined && campo.max === undefined) return false
+  if (!/^\d+$/.test(valor)) return true
+  const n = Number(valor)
+  return (campo.min !== undefined && n < campo.min) || (campo.max !== undefined && n > campo.max)
+}
 
 function Campo({
   campo,
@@ -100,6 +137,7 @@ function Campo({
 
   const yaConfigurada = esSecreta && valorGuardado === VALOR_ENMASCARADO
   const sinCambios = esSecreta ? valor === "" : valor === (valorGuardado ?? "")
+  const invalido = fueraDeRango(campo, valor)
 
   return (
     <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
@@ -108,6 +146,9 @@ function Campo({
         <Input
           id={`config-${campo.clave}`}
           type={campo.tipo ?? "text"}
+          min={campo.min}
+          max={campo.max}
+          aria-invalid={invalido && valor !== "" ? true : undefined}
           value={valor}
           placeholder={yaConfigurada ? "Ya configurada — escribí una nueva para cambiarla" : campo.placeholder}
           autoComplete={esSecreta ? "new-password" : "off"}
@@ -117,7 +158,7 @@ function Campo({
       </div>
       <Button
         variant="outline"
-        disabled={sinCambios || guardando}
+        disabled={sinCambios || invalido || guardando}
         onClick={() => void onGuardar(valor)}
       >
         {guardando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}

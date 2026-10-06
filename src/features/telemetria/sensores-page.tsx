@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { Info, LineChart, MoreHorizontal, Pencil, Plus, Power } from "lucide-react"
+import { Info, LineChart, MoreHorizontal, Pencil, Plus, Power, KeyRound } from "lucide-react"
 import { useDesactivarSensor, useSensores } from "./use-telemetria"
 import { SensorDialog } from "./sensor-dialog"
+import { CredencialMqttDialog } from "./credencial-mqtt-dialog"
 import { useFincas } from "@/features/fincas/use-fincas"
 import { ETIQUETA_TIPO_SENSOR } from "@/api/schemas/telemetria"
 import { useFormato } from "@/context/configuracion-context"
@@ -183,6 +184,15 @@ export function SensoresPage() {
                                   Editar
                                 </DropdownMenuItem>
                               </SensorDialog>
+
+                              {sensor.activo && (
+                                <CredencialMqttDialog sensor={sensor}>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <KeyRound className="size-4" aria-hidden="true" />
+                                    Credencial MQTT
+                                  </DropdownMenuItem>
+                                </CredencialMqttDialog>
+                              )}
 
                               {sensor.activo && (
                                 <DialogoConfirmacion

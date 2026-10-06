@@ -22,6 +22,7 @@ import {
   UMBRAL,
   TIPOS_LABOR_CATALOGO,
   CONFIGURACION,
+  EMPRESAS,
   CUARTELES,
   DASHBOARD,
   FINCAS,
@@ -107,6 +108,9 @@ export const handlers = [
     sesionComo(rol)
     return HttpResponse.json({
       accessToken: tokenDePrueba(),
+      expiresIn: 900,
+      refreshToken: "refresh-de-prueba",
+      refreshExpiresAt: "2099-01-01T00:00:00.000Z",
       user: {
         ...usuarioSesion(rol),
         email: body.email,
@@ -115,7 +119,53 @@ export const handlers = [
     })
   }),
 
+  // Rota el refresh token como el backend (D-023): cada respuesta trae uno nuevo.
+  http.post(`${API}/auth/refresh`, async ({ request }) => {
+    const { refreshToken } = (await request.json()) as { refreshToken: string }
+    if (!refreshToken.startsWith("refresh-")) {
+      return HttpResponse.json(
+        { statusCode: 401, path: "/api/auth/refresh", message: "Sesión inválida" },
+        { status: 401 }
+      )
+    }
+    return HttpResponse.json({
+      accessToken: tokenDePrueba(),
+      expiresIn: 900,
+      refreshToken: `${refreshToken}-r`,
+      refreshExpiresAt: "2099-01-01T00:00:00.000Z",
+      user: usuarioSesion(rolActual),
+    })
+  }),
+
   http.post(`${API}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
+
+  // D-025: administración de empresas, solo el Administrador de plataforma.
+  http.get(`${API}/empresas`, () =>
+    conRoles(["Administrador"], "/api/empresas", () => EMPRESAS)
+  ),
+  http.post(`${API}/empresas`, async ({ request }) => {
+    if (rolActual !== "Administrador") return prohibido("/api/empresas")
+    const body = (await request.json()) as {
+      nombre: string
+      cuit: string
+      propietario: { nombre: string; email: string }
+    }
+    if (EMPRESAS.some((e) => e.cuit === body.cuit)) {
+      return HttpResponse.json(
+        { statusCode: 409, path: "/api/empresas", message: "Ya existe una empresa con ese CUIT" },
+        { status: 409 }
+      )
+    }
+    return HttpResponse.json(
+      { id: "e9999999-9999-4999-8999-999999999999", nombre: body.nombre, cuit: body.cuit, activa: true },
+      { status: 201 }
+    )
+  }),
+  http.patch(`${API}/empresas/:id/:accion`, ({ params }) => {
+    if (rolActual !== "Administrador") return prohibido("/api/empresas")
+    const empresa = EMPRESAS.find((e) => e.id === params.id)
+    return HttpResponse.json({ ...empresa, activa: params.accion === "activar" })
+  }),
   http.post(`${API}/auth/cambiar-password`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${API}/auth/forgot-password`, () =>
     HttpResponse.json({
@@ -126,10 +176,16 @@ export const handlers = [
     HttpResponse.json({ message: "Contraseña actualizada correctamente." })
   ),
 
-  http.get(`${API}/dashboard/indicadores`, () => HttpResponse.json(DASHBOARD[rolActual])),
+  // D-025: `@AnyRole()` no incluye al Administrador de plataforma.
+  http.get(`${API}/dashboard/indicadores`, () =>
+    rolActual === "Administrador"
+      ? prohibido("/api/dashboard/indicadores")
+      : HttpResponse.json(DASHBOARD[rolActual])
+  ),
 
+  // D-021 del backend: el Auditor también lee fincas y cuarteles.
   http.get(`${API}/fincas`, ({ request }) => {
-    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz", "Auditor"]
     if (!permitidos.includes(rolActual)) return prohibido("/api/fincas")
     const search = new URL(request.url).searchParams.get("search")
     const fincas = search
@@ -200,12 +256,12 @@ export const handlers = [
   }),
 
   http.get(`${API}/cuarteles`, () =>
-    conRoles(["Propietario", "Agronomo", "Capataz"], "/api/cuarteles", () => CUARTELES)
+    conRoles(["Propietario", "Agronomo", "Capataz", "Auditor"], "/api/cuarteles", () => CUARTELES)
   ),
 
   /** `GET /cuarteles/buscar` (HU-11): otro endpoint, y este si esta paginado. */
   http.get(`${API}/cuarteles/buscar`, ({ request }) => {
-    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz"]
+    const permitidos: RolNombre[] = ["Propietario", "Agronomo", "Capataz", "Auditor"]
     if (!permitidos.includes(rolActual)) return prohibido("/api/cuarteles/buscar")
 
     const params = new URL(request.url).searchParams
@@ -714,6 +770,21 @@ export const handlers = [
     return HttpResponse.json({ ...SENSORES[0], ...body })
   }),
 
+  // D-026: credencial MQTT del sensor; la contraseña solo viene acá.
+  http.post(`${API}/sensores/:id/credenciales-mqtt`, ({ params }) => {
+    if (!["Propietario", "Agronomo"].includes(rolActual)) return prohibido("/api/sensores")
+    const sensor = SENSORES.find((x) => x.id === params.id)
+    return HttpResponse.json(
+      {
+        broker: "mqtts://terravid-api.duckdns.org:8883",
+        usuario: sensor?.codigo ?? "SEN-01",
+        password: "clave-mqtt-de-prueba",
+        topico: `terravid/sensores/${sensor?.codigo ?? "SEN-01"}/lecturas`,
+      },
+      { status: 201 }
+    )
+  }),
+
   http.patch(`${API}/sensores/:id/desactivar`, () =>
     HttpResponse.json({ ...SENSORES[0], activo: false })
   ),
@@ -758,6 +829,23 @@ export const handlers = [
     if (rolActual !== "Propietario") return prohibido("/api/campanias")
     const body = (await request.json()) as Record<string, unknown>
     return HttpResponse.json({ ...CAMPANIAS[0], ...body }, { status: 201 })
+  }),
+
+  // D-027: metas de cosecha y avance por cuartel.
+  http.get(`${API}/campanias/:id/avance`, ({ params }) =>
+    HttpResponse.json({
+      campania: { id: params.id, nombre: CAMPANIAS[0].nombre, fechaDesde: CAMPANIAS[0].fechaDesde, fechaHasta: CAMPANIAS[0].fechaHasta },
+      metaKg: 8000,
+      kgCosechados: 2500,
+      cuarteles: [
+        { cuartelId: IDS.cuartel, cuartelNombre: "Cuartel 1", fincaId: IDS.finca, fincaNombre: "Finca El Rosal", metaKg: 8000, kgCosechados: 2500 },
+      ],
+    })
+  ),
+  http.put(`${API}/campanias/:id/metas/:cuartelId`, async ({ params, request }) => {
+    if (rolActual !== "Propietario") return prohibido("/api/campanias")
+    const { metaKg } = (await request.json()) as { metaKg: number }
+    return HttpResponse.json({ cuartelId: params.cuartelId, metaKg: metaKg === 0 ? null : metaKg })
   }),
 
   http.patch(`${API}/campanias/:id/cerrar`, ({ params }) =>
@@ -913,6 +1001,15 @@ export const handlers = [
 
   http.get(`${API}/ayuda/tickets`, () =>
     conRoles(["Propietario"], "/api/ayuda/tickets", () => TICKETS)
+  ),
+
+  // D-020 del backend: cualquier rol, solo las claves de presentación.
+  http.get(`${API}/configuracion/preferencias`, () =>
+    HttpResponse.json(
+      CONFIGURACION.filter((c) =>
+        ["nombre_organizacion", "moneda", "unidades", "zona_horaria"].includes(c.clave)
+      )
+    )
   ),
 
   http.get(`${API}/configuracion`, () =>
