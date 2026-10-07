@@ -11,7 +11,7 @@ Frontend web de oficina del ERP agrícola TerraVid: dashboard, ABMs (fincas, cua
 | [`Backend`](https://github.com/TerraVidMza/Backend) | API REST — NestJS + TypeORM + PostgreSQL/PostGIS |
 | [`Web`](https://github.com/TerraVidMza/Web) (este repo) | Frontend web de oficina |
 | [`Mobile`](https://github.com/TerraVidMza/Mobile) | App móvil offline-first para campo (React Native / Expo) |
-| [`IoTSensor`](https://github.com/TerraVidMza/IoTSensor) | Firmware de los nodos de telemetría (ESP32) |
+| [`IoTSensor`](https://github.com/TerraVidMza/IoTSensor) | Firmware de los nodos de telemetría (ESP32 y ESP8266) |
 
 > Cómo se comunican estos 4 componentes entre sí está detallado en [`docs/ARCHITECTURE.md` del repo Backend](https://github.com/TerraVidMza/Backend/blob/develop/docs/ARCHITECTURE.md).
 
@@ -69,6 +69,8 @@ La integración continua y entrega continua (CI/CD) está configurada mediante G
 - Finalmente, se despliega a Firebase usando credenciales de Service Account configuradas en el repositorio.
 
 La configuración de enrutamiento y servidor estático se encuentra en `firebase.json`.
+
+Producción: `https://terravid-24041.web.app`, en el proyecto de Firebase `terravid-24041`. La PWA de Mobile vive en el mismo proyecto, en otro sitio de Hosting (`terravid-mobile.web.app`). Si cambia el dominio de la Web, hay que agregarlo a `CORS_ORIGIN` del backend (D-029 del repo Backend).
 
 ## Cómo está organizado
 
