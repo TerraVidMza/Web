@@ -66,11 +66,11 @@ La integración continua y entrega continua (CI/CD) está configurada mediante G
 
 - Al hacer un *push* a la rama `main` o al activar el workflow manualmente, se ejecuta [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 - El workflow compila la aplicación para producción inyectando la variable `VITE_API_URL` (gestión de URLs del backend mediante GitHub Secrets).
-- Finalmente, se despliega a Firebase usando credenciales de Service Account configuradas en el repositorio.
+- Finalmente, se despliega a Firebase con Workload Identity Federation: sin claves guardadas en el repositorio, con la cuenta `despliegue-firebase`, que solo puede desplegar Hosting ([W-030](docs/DECISIONS.md)).
 
 La configuración de enrutamiento y servidor estático se encuentra en `firebase.json`.
 
-Producción: `https://terravid-24041.web.app`, en el proyecto de Firebase `terravid-24041`. La PWA de Mobile vive en el mismo proyecto, en otro sitio de Hosting (`terravid-mobile.web.app`). Si cambia el dominio de la Web, hay que agregarlo a `CORS_ORIGIN` del backend (D-029 del repo Backend).
+Producción: `https://terravid.web.app`, en el proyecto `terravid`, el mismo de Google Cloud donde corren la VM y el backend. La PWA de Mobile vive en el mismo proyecto, en otro sitio de Hosting (ver el README de Mobile). Si cambia el dominio de la Web, hay que agregarlo a `CORS_ORIGIN` y `APP_URL` del backend (D-029 y D-033 del repo Backend). La dirección vieja, `terravid-24041.web.app`, redirige a la nueva hasta que se borre ese proyecto.
 
 ## Cómo está organizado
 
