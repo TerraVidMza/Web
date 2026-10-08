@@ -10,6 +10,9 @@ jobs:
   build_and_deploy:
     name: Build, Test & Deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -34,10 +37,17 @@ jobs:
           # Inyecta la URL del backend desde los Secrets de GitHub para el bundle de producción
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
-      - name: Deploy to Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      # Sin claves: GitHub entrega un token OIDC y Google lo cambia por uno de
+      # la cuenta despliegue-firebase, que solo puede desplegar Hosting (W-030).
+      - name: Autenticar contra Google Cloud
+        uses: google-github-actions/auth@v3
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TERRAVID_24041 }}
-          channelId: live
-          projectId: terravid-24041
+          project_id: terravid
+          workload_identity_provider: projects/286067019564/locations/global/workloadIdentityPools/github/providers/terravidmza
+          service_account: despliegue-firebase@terravid.iam.gserviceaccount.com
+
+      - name: Deploy to Firebase
+        run: npx --yes firebase-tools@15 deploy --only hosting --project terravid --non-interactive
+
+      - name: Post-Deployment Health Check
+        run: curl --retry 5 --retry-delay 3 --retry-all-errors -I -f https://terravid.web.app

@@ -535,3 +535,34 @@ docker compose up -d db && npm run migration:run && npm run seed && npm run star
 npx playwright install chromium   # una sola vez
 npm run test:e2e
 ```
+
+---
+
+## W-030 — La Web se despliega en el proyecto `terravid`, sin claves
+
+**Contexto:** la Web estaba en el proyecto de Firebase `terravid-24041`, en otra
+cuenta de Google que la VM y el backend (proyecto `terravid`). D-029 del
+backend dejó anotado unificarlos; D-033 lo hace.
+
+**Decisión:**
+
+- La Web se publica en el sitio por defecto del proyecto `terravid`:
+  **`https://terravid.web.app`**. `.firebaserc` apunta a `terravid`.
+- El workflow de despliegue se autentica con **Workload Identity Federation**,
+  con el mismo pool y proveedor que ya usa el backend, y la cuenta
+  `despliegue-firebase`, que tiene solo `firebasehosting.admin` y
+  `serviceusage.serviceUsageConsumer` y solo la pueden usar los repos Web y
+  Mobile. Despliega con `firebase-tools` en vez de
+  `FirebaseExtended/action-hosting-deploy`, porque esa acción exige una clave
+  JSON.
+- Se suma un health check contra la URL publicada, como ya tenía Mobile.
+- `terravid-24041.web.app` responde con un **301** a la dirección nueva durante
+  7 días; después se borra el proyecto viejo.
+
+**Alternativa descartada:** una clave JSON nueva en un secret. La organización
+de `terravid` prohíbe crear claves de cuentas de servicio
+(`iam.disableServiceAccountKeyCreation`), y aunque no lo hiciera, una clave que
+no vence es justo lo que WIF evita.
+
+**Consecuencia:** el secret `FIREBASE_SERVICE_ACCOUNT_TERRAVID_24041` deja de
+usarse y se puede borrar del repo.
