@@ -887,7 +887,14 @@ export const handlers = [
     conRoles(
       ["Propietario", "Agronomo"],
       "/api/inteligencia-agronomica/recomendaciones",
-      () => RECOMENDACIONES
+      () => ({
+        disponible: true,
+        diasConDatos: 45,
+        diasMinimos: 30,
+        diasFaltantes: 0,
+        mensaje: null,
+        recomendaciones: RECOMENDACIONES,
+      })
     )
   ),
 

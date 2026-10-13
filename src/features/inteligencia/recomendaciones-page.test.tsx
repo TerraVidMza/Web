@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { http, HttpResponse } from "msw"
 import { RecomendacionesPage } from "./recomendaciones-page"
 import { iniciarSesionComo, renderConProveedores, screen, waitFor, within } from "@/test/utils"
 import { servidor } from "@/test/setup"
@@ -11,6 +12,27 @@ async function elegirCuartel(usuario: ReturnType<typeof renderConProveedores>["u
 }
 
 describe("RecomendacionesPage (HU-30)", () => {
+  it("sin histórico suficiente muestra cuántos días faltan, no un error", async () => {
+    iniciarSesionComo("Propietario")
+    servidor.use(
+      http.get("http://localhost:3000/api/inteligencia-agronomica/recomendaciones/:cuartelId", () =>
+        HttpResponse.json({
+          disponible: false,
+          diasConDatos: 12,
+          diasMinimos: 30,
+          diasFaltantes: 18,
+          mensaje: "Faltan 18 día(s) de datos para generar recomendaciones para este cuartel.",
+          recomendaciones: [],
+        })
+      )
+    )
+    const { usuario } = renderConProveedores(<RecomendacionesPage />)
+    await elegirCuartel(usuario)
+
+    expect(await screen.findByText("Todavía no hay histórico suficiente")).toBeInTheDocument()
+    expect(screen.getByText(/Faltan 18 día\(s\) de datos/)).toBeInTheDocument()
+  })
+
   it("arranca mostrando solo las activas", async () => {
     iniciarSesionComo("Agronomo")
     const { usuario } = renderConProveedores(<RecomendacionesPage />)

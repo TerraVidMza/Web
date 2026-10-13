@@ -88,7 +88,8 @@ export const recomendacionSchema = z.object({
   // Se lee tolerante: una severidad nueva del backend no puede tirar abajo la
   // pantalla por un valor que solo decide un color.
   severidad: z.string(),
-  datos: z.record(z.string(), z.unknown()).nullable(),
+  // El backend la llama `evidencia` (los números que dispararon la regla).
+  evidencia: z.record(z.string(), z.unknown()).nullable(),
   estado: estadoRecomendacionSchema,
   nota: opcional(z.string()),
   resueltaPorId: opcional(uuid),
@@ -98,7 +99,20 @@ export const recomendacionSchema = z.object({
 
 export type Recomendacion = z.infer<typeof recomendacionSchema>
 
-export const recomendacionesSchema = z.array(recomendacionSchema)
+/**
+ * El backend no devuelve la lista sola: la envuelve con el estado del histórico.
+ * Con menos de `diasMinimos` días de datos no evalúa reglas y responde
+ * `disponible: false` con un `mensaje` que dice cuántos días faltan. Leerlo
+ * como array hacía que la pantalla mostrara un error de contrato siempre.
+ */
+export const recomendacionesSchema = z.object({
+  disponible: z.boolean(),
+  diasConDatos: z.number(),
+  diasMinimos: z.number(),
+  diasFaltantes: z.number(),
+  mensaje: z.string().nullable(),
+  recomendaciones: z.array(recomendacionSchema),
+})
 
 // ─── HU-31 · Comparación entre campañas ─────────────────────────────────────
 
