@@ -121,7 +121,7 @@ function TablaIot({ comparacion }: { comparacion: Comparacion }) {
       ...Object.keys(comparacion.periodo1.promediosIot),
       ...Object.keys(comparacion.periodo2.promediosIot),
     ]),
-  ].sort()
+  ].sort((a, b) => a.localeCompare(b))
 
   if (variables.length === 0) return null
 
