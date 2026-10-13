@@ -566,3 +566,33 @@ no vence es justo lo que WIF evita.
 
 **Consecuencia:** el secret `FIREBASE_SERVICE_ACCOUNT_TERRAVID_24041` deja de
 usarse y se puede borrar del repo.
+
+---
+
+## W-031 — SonarCloud además de oxlint
+
+**Contexto:** la Etapa 6 pide aplicar un analizador estático y documentarlo. La Web ya usa oxlint: 0 errores y 6 advertencias `only-export-components`, que solo afectan el *fast refresh* en desarrollo.
+
+**Decisión:** se agrega `.sonarcloud.properties` comentado, en modo *Automatic Analysis*:
+
+- Fuentes: `src`.
+- Tests: los de Vitest, los mocks de MSW y los de Playwright.
+- `src/components/ui/**` (generado por shadcn/ui) queda fuera del cálculo de duplicación.
+
+oxlint sigue siendo el linter de cada commit; SonarCloud suma seguridad, duplicación, deuda técnica y Quality Gate por PR. El informe está en `Backend/docs/entrega-demo2/03-analisis-estatico.md` (D-034).
+
+**Estado:** ✅ Vigente.
+
+---
+
+## W-032 — Recomendaciones (HU-30): la Web lee la respuesta real del backend
+
+**Contexto:** al preparar el manual de usuario y las pruebas de la Etapa 6, la pestaña **Inteligencia → Recomendaciones** mostraba siempre «El servidor respondió algo que esta versión no entiende». El backend responde un objeto `{disponible, diasConDatos, diasMinimos, diasFaltantes, mensaje, recomendaciones}`, que incluye el aviso de histórico insuficiente (menos de 30 días), y cada recomendación trae `evidencia`. La Web validaba un array de recomendaciones con un campo `datos`. Los tests no lo detectaban porque el mock de MSW repetía la forma vieja.
+
+**Decisión:**
+
+- El esquema `recomendacionesSchema` describe el objeto completo y `recomendacionSchema` usa `evidencia`.
+- Cuando `disponible` es `false`, la pantalla muestra «Todavía no hay histórico suficiente» con el mensaje del backend, que dice cuántos días faltan, en lugar del vacío genérico.
+- El mock de MSW pasa a devolver la forma real, y se agrega un test del caso sin histórico.
+
+**Estado:** ✅ Vigente.
