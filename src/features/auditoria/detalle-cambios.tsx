@@ -24,7 +24,7 @@ export function DetalleCambios({ evento }: { evento: LogAuditoria }) {
   const despues = evento.datosNuevos ?? {}
   const claves = [...new Set([...Object.keys(antes), ...Object.keys(despues)])]
     .filter((clave) => comoTexto(antes[clave]) !== comoTexto(despues[clave]))
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
 
   if (claves.length === 0) {
     return <span className="text-xs text-muted-foreground">Sin detalle</span>

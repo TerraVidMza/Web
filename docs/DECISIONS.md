@@ -596,3 +596,13 @@ oxlint sigue siendo el linter de cada commit; SonarCloud suma seguridad, duplica
 - El mock de MSW pasa a devolver la forma real, y se agrega un test del caso sin histórico.
 
 **Estado:** ✅ Vigente.
+
+---
+
+## W-033 — Orden de textos con `localeCompare`
+
+**Contexto:** el primer análisis de SonarCloud (W-031) dio a la Web **Reliability D** por dos bugs críticos (`typescript:S2871`): `.sort()` sin comparador en la comparación de campañas y en el detalle de cambios de auditoría. Sin comparador, JavaScript ordena por código UTF-16: las mayúsculas van antes que las minúsculas y las letras con tilde quedan al final («Área» después de «zona»).
+
+**Decisión:** las dos llamadas usan `.sort((a, b) => a.localeCompare(b))`.
+
+**Estado:** ✅ Vigente.
