@@ -105,7 +105,8 @@ export function RecomendacionesPage() {
   const consulta = useRecomendaciones(cuartelId)
   const formato = useFormato()
 
-  const todas = consulta.data ?? []
+  const todas = consulta.data?.recomendaciones ?? []
+  const sinHistorico = consulta.data?.disponible === false
   const recomendaciones = filtro === "activa" ? todas.filter((r) => r.estado === "activa") : todas
   const activas = todas.filter((r) => r.estado === "activa").length
 
@@ -146,12 +147,19 @@ export function RecomendacionesPage() {
               <EstadoConsulta
                 consulta={consulta}
                 cantidad={recomendaciones.length}
-                hayFiltros={filtro === "activa"}
-                vacio={{
-                  titulo: "Este cuartel no tiene recomendaciones",
-                  descripcion:
-                    "Las reglas necesitan histórico de labores, pesajes y telemetría para encontrar patrones.",
-                }}
+                hayFiltros={filtro === "activa" && !sinHistorico}
+                vacio={
+                  sinHistorico
+                    ? {
+                        titulo: "Todavía no hay histórico suficiente",
+                        descripcion: consulta.data?.mensaje ?? "",
+                      }
+                    : {
+                        titulo: "Este cuartel no tiene recomendaciones",
+                        descripcion:
+                          "Las reglas necesitan histórico de labores, pesajes y telemetría para encontrar patrones.",
+                      }
+                }
                 vacioPorFiltro={{
                   titulo: "No hay recomendaciones activas",
                   descripcion: "Cambiá a «Todas» para ver las ya resueltas.",
