@@ -83,6 +83,7 @@ const TABLA_DEL_BACKEND: Record<Permiso, RolNombre[]> = {
   catalogos: [P, A, C, U],
   campanias: [P, A, C, U],
   ayuda: [P, A, C, U],
+  manual: [P, A, C, U, ADM],
   fincas: [P, A, C, U],
   fincasEscritura: [P],
   cuartelesEscritura: [P, A],

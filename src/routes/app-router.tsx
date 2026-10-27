@@ -201,9 +201,13 @@ export function AppRouter() {
             <Route index element={<Inicio />} />
             <Route path="perfil" element={<PerfilPage />} />
             <Route path="notificaciones" element={<NotificacionesPage />} />
-            <Route path="ayuda" element={<AyudaLayout />}>
-              <Route index element={<ManualPage />} />
-              <Route path="soporte" element={<SoportePage />} />
+            <Route element={<RoleRoute permiso="manual" />}>
+              <Route path="ayuda" element={<AyudaLayout />}>
+                <Route index element={<ManualPage />} />
+                <Route element={<RoleRoute permiso="ayuda" />}>
+                  <Route path="soporte" element={<SoportePage />} />
+                </Route>
+              </Route>
             </Route>
 
             <Route element={<RoleRoute permiso="fincas" />}>

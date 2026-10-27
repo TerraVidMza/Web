@@ -606,3 +606,30 @@ oxlint sigue siendo el linter de cada commit; SonarCloud suma seguridad, duplica
 **Decisión:** las dos llamadas usan `.sort((a, b) => a.localeCompare(b))`.
 
 **Estado:** ✅ Vigente.
+
+---
+
+## W-034 — Manual de usuario empaquetado, uno por rol
+
+**Contexto:** **Ayuda → Manual y FAQ** listaba `GET /ayuda/articulos`. En producción esa tabla estaba vacía y la pantalla no mostraba nada. El contenido era texto plano sin capturas ni distinción de roles, y el Administrador de plataforma ni siquiera veía la sección (D-036 del backend).
+
+**Decisión:**
+
+- Un manual en Markdown por rol en `src/features/ayuda/manual/contenido/`, con sus capturas en `manual/img/`. Se cargan con `import.meta.glob`: el texto, de forma perezosa, así cada usuario descarga solo el suyo; las imágenes, como URL, que el navegador pide al mostrarlas.
+- La pantalla tiene un índice lateral con las secciones `##` y sus `###`, un buscador local que no distingue tildes y el contenido por secciones, dibujado con `react-markdown` y `remark-gfm` (tablas). No se sumó el plugin de tipografía: se mapean los elementos a las clases de la Web.
+- Las preguntas frecuentes de `articulos_ayuda`, si la empresa cargó alguna, aparecen al final. Las modificadas en los últimos 30 días llevan la marca **Actualizado**, que pedía HU-36.
+- La sección **Ayuda** del menú y la ruta usan el permiso `manual`, que incluye al Administrador. **Pedir ayuda** sigue con `ayuda`.
+- Las capturas se regeneran con `scripts/manual/capturas-manual.mjs` sobre una base aislada con datos de demostración. Ver `scripts/manual/README.md`.
+- El manual del Capataz copia las secciones de la app de `Mobile/src/manual/contenido.ts` (M-022). Si cambia allá, hay que regenerar esta copia.
+
+**Estado:** ✅ Vigente.
+
+---
+
+## W-035 — Correlación sin coeficiente calculable
+
+**Contexto:** al sacar las capturas del manual, **Inteligencia → Correlación** mostraba «El servidor respondió algo que esta versión de la aplicación no entiende». El backend manda `coeficienteCorrelacion: null` cuando no lo puede calcular: menos de dos días en común o una serie sin variación. La Web lo validaba como número, así que con pocos datos la pantalla entera fallaba en vez de mostrar el aviso de datos insuficientes. Es el mismo tipo de defecto que W-032: el mock de MSW siempre traía un número.
+
+**Decisión:** `coeficienteCorrelacion` es `number | null`. Sin coeficiente se muestra «—» junto a la interpretación y al aviso que manda el backend. Se agregó un test con `null`.
+
+**Estado:** ✅ Vigente.

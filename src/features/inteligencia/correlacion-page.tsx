@@ -132,9 +132,11 @@ export function CorrelacionPage() {
                 <CardContent className="space-y-3">
                   <div className="flex flex-wrap items-baseline gap-3">
                     <span className="text-3xl font-semibold tabular-nums">
-                      {formato.numero(datos.coeficienteCorrelacion, {
-                        maximumFractionDigits: 2,
-                      })}
+                      {datos.coeficienteCorrelacion === null
+                        ? "—"
+                        : formato.numero(datos.coeficienteCorrelacion, {
+                            maximumFractionDigits: 2,
+                          })}
                     </span>
                     <span className="text-sm text-muted-foreground">
                       {datos.interpretacion}

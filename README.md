@@ -130,7 +130,7 @@ Agrupar por módulo en vez de por tipo de archivo hace que agregar Vendimia sea 
 | `/inteligencia/recomendaciones` | Recomendaciones | Conectada — resolver como aplicada o descartada (HU-30) |
 | `/inteligencia/campanias` | Campañas | Conectada — ABM del corte temporal del sistema (D-014) |
 | `/mapa` | Mapa | Conectada — fincas y cuarteles con color por estado (HU-10) |
-| `/ayuda` | Manual y FAQ | Conectada — con búsqueda y filtros (HU-36) |
+| `/ayuda` | Manual de usuario | Manual del rol de la sesión, con índice, búsqueda y capturas; al final, las preguntas frecuentes de la empresa (HU-36, W-034). Regenerar capturas: [`scripts/manual/README.md`](scripts/manual/README.md) |
 | `/ayuda/soporte` | Pedir ayuda | Conectada — ticket de soporte (HU-36) |
 
 El acceso por rol **lo define el backend**: los permisos llegan con la sesión (`user.permisos`, D-024 del backend) y de ahí salen el menú, las guardas de ruta y los botones. La Web no tiene tabla propia ([W-025](docs/DECISIONS.md)); [`src/auth/permisos.ts`](src/auth/permisos.ts) solo enumera los nombres conocidos.

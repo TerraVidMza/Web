@@ -1,13 +1,18 @@
 import { NavLink, Outlet } from "react-router-dom"
+import { useAuth } from "@/context/auth-context"
+import { puede, type Permiso } from "@/auth/permisos"
 import { cn } from "@/lib/utils"
 
-const PESTANIAS = [
-  { to: "/ayuda", label: "Manual y FAQ", exacta: true },
-  { to: "/ayuda/soporte", label: "Pedir ayuda", exacta: false },
+const PESTANIAS: { to: string; label: string; exacta: boolean; permiso: Permiso }[] = [
+  { to: "/ayuda", label: "Manual de usuario", exacta: true, permiso: "manual" },
+  // Los pedidos son por empresa: el Administrador de plataforma no tiene una.
+  { to: "/ayuda/soporte", label: "Pedir ayuda", exacta: false, permiso: "ayuda" },
 ]
 
 /** Centro de ayuda (HU-36). */
 export function AyudaLayout() {
+  const { user } = useAuth()
+  const visibles = PESTANIAS.filter((p) => puede(user, p.permiso))
   return (
     <div className="space-y-6">
       <div>
@@ -18,7 +23,7 @@ export function AyudaLayout() {
       </div>
 
       <nav aria-label="Vistas de ayuda" className="flex gap-1 border-b">
-        {PESTANIAS.map((pestania) => (
+        {visibles.map((pestania) => (
           <NavLink
             key={pestania.to}
             to={pestania.to}

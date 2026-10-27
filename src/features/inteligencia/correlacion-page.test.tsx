@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest"
+import { http, HttpResponse } from "msw"
 import { CorrelacionPage } from "./correlacion-page"
 import { iniciarSesionComo, renderConProveedores, screen } from "@/test/utils"
 import { servidor } from "@/test/setup"
+import { CORRELACION } from "@/test/fixtures-inteligencia"
 
 async function elegirTodo(usuario: ReturnType<typeof renderConProveedores>["usuario"]) {
   await usuario.click(await screen.findByRole("combobox", { name: /^finca$/i }))
@@ -38,6 +40,27 @@ describe("CorrelacionPage (HU-29)", () => {
     expect(await screen.findByText(/No hay suficientes datos/i)).toBeInTheDocument()
     expect(screen.getByText(/3 de 7 días necesarios/i)).toBeInTheDocument()
     expect(screen.getByText("0,98")).toBeInTheDocument()
+  })
+
+  it("sin coeficiente calculable muestra un guion y no un error (W-035)", async () => {
+    // El backend manda `null` con menos de dos días en común o una serie sin
+    // variación. La Web lo validaba como número y la pantalla entera fallaba.
+    servidor.use(
+      http.get("http://localhost:3000/api/inteligencia-agronomica/correlacion/:cuartelId", () =>
+        HttpResponse.json({
+          ...CORRELACION,
+          coeficienteCorrelacion: null,
+          interpretacion: "Sin datos suficientes",
+        })
+      )
+    )
+    iniciarSesionComo("Agronomo")
+    const { usuario } = renderConProveedores(<CorrelacionPage />)
+    await elegirTodo(usuario)
+
+    expect(await screen.findByText("Sin datos suficientes")).toBeInTheDocument()
+    expect(screen.getByText("—")).toBeInTheDocument()
+    expect(screen.getByText(/No hay suficientes datos/i)).toBeInTheDocument()
   })
 
   /**

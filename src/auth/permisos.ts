@@ -20,6 +20,7 @@ export const PERMISOS = [
   "catalogos",
   "campanias",
   "ayuda",
+  "manual",
   "fincas",
   "fincasEscritura",
   "cuartelesEscritura",
