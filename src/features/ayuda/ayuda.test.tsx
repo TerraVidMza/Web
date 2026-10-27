@@ -1,59 +1,86 @@
 import { describe, expect, it, vi } from "vitest"
 import { ManualPage } from "./manual-page"
 import { SoportePage } from "./soporte-page"
+import { AyudaLayout } from "./ayuda-layout"
 import { iniciarSesionComo, renderConProveedores, screen, waitFor } from "@/test/utils"
 import { servidor } from "@/test/setup"
 
-describe("ManualPage (HU-36)", () => {
-  it("lista manual y FAQ para cualquier rol", async () => {
+describe("ManualPage (HU-36, W-034)", () => {
+  it("muestra el manual del rol de la sesión, no el de otro", async () => {
     iniciarSesionComo("Capataz")
     renderConProveedores(<ManualPage />)
 
-    expect(await screen.findByText(/Cómo dar de alta una finca/i)).toBeInTheDocument()
-    expect(screen.getByText(/¿Por qué no puedo aprobar un remito\?/i)).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Manual del Capataz" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "App móvil: Registrar una labor" })
+    ).toBeInTheDocument()
+    // Usuarios es del Propietario: al Capataz no le sirve.
+    expect(screen.queryByRole("heading", { name: "Usuarios" })).not.toBeInTheDocument()
   })
 
-  it("despliega el contenido de un artículo", async () => {
-    iniciarSesionComo("Capataz")
-    const { usuario } = renderConProveedores(<ManualPage />)
+  it("el Propietario ve sus secciones de administración", async () => {
+    iniciarSesionComo("Propietario")
+    renderConProveedores(<ManualPage />)
 
-    const disparador = await screen.findByRole("button", {
-      name: /Cómo dar de alta una finca/i,
-    })
-    expect(disparador).toHaveAttribute("aria-expanded", "false")
-
-    await usuario.click(disparador)
-    expect(await screen.findByText(/usá el botón «Nueva finca»/i)).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Manual del Propietario" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Usuarios" })).toBeInTheDocument()
+    expect(screen.getByRole("navigation", { name: /índice del manual/i })).toBeInTheDocument()
   })
 
-  it("manda el filtro de módulo al backend, que ahora lo valida", async () => {
-    iniciarSesionComo("Capataz")
-    const urls: URL[] = []
-    servidor.events.on("request:start", ({ request }) => {
-      const url = new URL(request.url)
-      if (url.pathname.endsWith("/ayuda/articulos")) urls.push(url)
-    })
+  it("el Administrador de plataforma tiene su manual", async () => {
+    iniciarSesionComo("Administrador")
+    renderConProveedores(<ManualPage />)
 
-    const { usuario } = renderConProveedores(<ManualPage />)
-    await screen.findByText(/Cómo dar de alta una finca/i)
-
-    await usuario.click(screen.getByRole("combobox", { name: /módulo/i }))
-    await usuario.click(await screen.findByRole("option", { name: "Vendimia" }))
-
-    // Antes llegaba crudo: `?modulo=vendmia` daba 200 con lista vacía y el
-    // usuario veía un centro de ayuda sin artículos, sin saber por qué.
-    await waitFor(() => expect(urls.at(-1)?.searchParams.get("modulo")).toBe("vendimia"))
+    expect(
+      await screen.findByRole("heading", { name: "Manual del Administrador de plataforma" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Empresas" })).toBeInTheDocument()
   })
 
-  it("la búsqueda por texto filtra en el cliente", async () => {
-    iniciarSesionComo("Capataz")
+  it("la búsqueda deja solo las secciones que mencionan la palabra, sin importar tildes", async () => {
+    iniciarSesionComo("Auditor")
     const { usuario } = renderConProveedores(<ManualPage />)
-    await screen.findByText(/Cómo dar de alta una finca/i)
+    await screen.findByRole("heading", { name: "Manual del Auditor" })
 
-    await usuario.type(screen.getByLabelText(/buscar/i), "remito")
+    await usuario.type(screen.getByLabelText(/buscar en el manual/i), "auditoria")
 
-    expect(screen.queryByText(/Cómo dar de alta una finca/i)).not.toBeInTheDocument()
-    expect(screen.getByText(/¿Por qué no puedo aprobar un remito\?/i)).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Log de auditoría" })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Mi perfil" })).not.toBeInTheDocument()
+  })
+
+  it("avisa cuando ninguna sección coincide", async () => {
+    iniciarSesionComo("Auditor")
+    const { usuario } = renderConProveedores(<ManualPage />)
+    await screen.findByRole("heading", { name: "Manual del Auditor" })
+
+    await usuario.type(screen.getByLabelText(/buscar en el manual/i), "zzzz")
+
+    expect(screen.getByText(/Ninguna sección menciona eso/i)).toBeInTheDocument()
+  })
+
+  it("agrega al final las preguntas frecuentes cargadas por la empresa", async () => {
+    iniciarSesionComo("Capataz")
+    renderConProveedores(<ManualPage />)
+
+    expect(await screen.findByText(/¿Por qué no puedo aprobar un remito\?/i)).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Más preguntas frecuentes" })).toBeInTheDocument()
+  })
+})
+
+describe("AyudaLayout", () => {
+  it("al Administrador le muestra el manual pero no «Pedir ayuda»: no tiene empresa", () => {
+    iniciarSesionComo("Administrador")
+    renderConProveedores(<AyudaLayout />)
+
+    expect(screen.getByRole("link", { name: "Manual de usuario" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Pedir ayuda" })).not.toBeInTheDocument()
+  })
+
+  it("a un rol de empresa le muestra las dos pestañas", () => {
+    iniciarSesionComo("Auditor")
+    renderConProveedores(<AyudaLayout />)
+
+    expect(screen.getByRole("link", { name: "Pedir ayuda" })).toBeInTheDocument()
   })
 })
 

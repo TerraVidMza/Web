@@ -43,5 +43,5 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/empresas", label: "Empresas", icon: Building2, permiso: "empresas" },
   { to: "/usuarios", label: "Usuarios", icon: Users, permiso: "usuarios" },
   { to: "/configuracion", label: "Configuración", icon: Settings, permiso: "configuracion" },
-  { to: "/ayuda", label: "Ayuda", icon: HelpCircle, permiso: "ayuda" },
+  { to: "/ayuda", label: "Ayuda", icon: HelpCircle, permiso: "manual" },
 ]

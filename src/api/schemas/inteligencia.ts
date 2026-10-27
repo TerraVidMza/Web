@@ -60,7 +60,12 @@ export const correlacionSchema = z.object({
   diasConDatosEnComun: z.number().int(),
   diasRequeridos: z.number().int(),
   datosSuficientes: z.boolean(),
-  coeficienteCorrelacion: z.number(),
+  /**
+   * `null` cuando no se puede calcular: menos de dos días en común o una serie
+   * sin variación (W-035). Se validaba como número y la pantalla entera caía en
+   * «el servidor respondió algo que esta versión no entiende».
+   */
+  coeficienteCorrelacion: z.number().nullable(),
   interpretacion: z.string(),
   mensaje: z.string().nullable(),
 })
