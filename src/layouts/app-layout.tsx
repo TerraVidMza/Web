@@ -19,7 +19,7 @@ function Navegacion({ alNavegar }: { alNavegar?: () => void }) {
   const visibles = NAV_ITEMS.filter((item) => puede(user, item.permiso))
 
   return (
-    <nav aria-label="Secciones" className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
+    <nav aria-label="Secciones" className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {visibles.map((item) => (
         <NavLink
           key={item.to}
