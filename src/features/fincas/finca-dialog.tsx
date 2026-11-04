@@ -1,19 +1,25 @@
-import { useState, type ReactNode } from "react"
-import { z } from "zod"
-import { Loader2 } from "lucide-react"
-import { useActualizarFinca, useCrearFinca } from "./use-fincas"
-import type { Finca } from "@/api/schemas/finca"
-import { poligonoSchema, type PoligonoGeoJson } from "@/api/schemas/geo"
-import { hectareasOpcional, latitud, longitud, nombreCorto, ubicacion } from "@/lib/campos"
-import { datosGeograficos } from "@/lib/poligono-payload"
-import { useCuartelesDeFinca } from "@/features/cuarteles/use-cuarteles"
-import { EditorPoligonoDiferido } from "@/features/mapa/editor-poligono-diferido"
-import type { CapaDeContexto } from "@/features/mapa/editor-poligono"
-import { avisarAdvertencias } from "@/components/formulario/avisar-advertencias"
-import { useFormularioApi } from "@/components/formulario/use-formulario-api"
-import { ErrorDelServidor } from "@/components/formulario/error-del-servidor"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState, type ReactNode } from "react";
+import { z } from "zod";
+import { Loader2 } from "lucide-react";
+import { useActualizarFinca, useCrearFinca } from "./use-fincas";
+import type { Finca } from "@/api/schemas/finca";
+import { poligonoSchema, type PoligonoGeoJson } from "@/api/schemas/geo";
+import {
+  hectareasOpcional,
+  latitud,
+  longitud,
+  nombreCorto,
+  ubicacion,
+} from "@/lib/campos";
+import { datosGeograficos } from "@/lib/poligono-payload";
+import { useCuartelesDeFinca } from "@/features/cuarteles/use-cuarteles";
+import { EditorPoligonoDiferido } from "@/features/mapa/editor-poligono-diferido";
+import type { CapaDeContexto } from "@/features/mapa/editor-poligono";
+import { avisarAdvertencias } from "@/components/formulario/avisar-advertencias";
+import { useFormularioApi } from "@/components/formulario/use-formulario-api";
+import { ErrorDelServidor } from "@/components/formulario/error-del-servidor";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +28,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const fincaSchema = z
   .object({
@@ -38,7 +51,7 @@ const fincaSchema = z
   .refine((v) => v.poligono !== null || v.hectareas !== undefined, {
     message: "Ingresá las hectáreas o dibujá el contorno",
     path: ["hectareas"],
-  })
+  });
 
 /** Los `<input>` devuelven strings; el número vacío se representa como `""`. */
 function valoresIniciales(finca?: Finca) {
@@ -49,7 +62,7 @@ function valoresIniciales(finca?: Finca) {
     latitud: finca?.latitud != null ? String(finca.latitud) : "",
     longitud: finca?.longitud != null ? String(finca.longitud) : "",
     poligono: finca?.poligono ?? null,
-  }
+  };
 }
 
 /**
@@ -62,16 +75,20 @@ function ContornoDeFinca({
   valor,
   onChange,
 }: {
-  finca?: Finca
-  valor: PoligonoGeoJson | null
-  onChange: (poligono: PoligonoGeoJson | null) => void
+  finca?: Finca;
+  valor: PoligonoGeoJson | null;
+  onChange: (poligono: PoligonoGeoJson | null) => void;
 }) {
-  const cuarteles = useCuartelesDeFinca(finca?.id ?? "")
+  const cuarteles = useCuartelesDeFinca(finca?.id ?? "");
   const contexto: CapaDeContexto[] = (cuarteles.data ?? []).flatMap((c) =>
-    c.poligono ? [{ id: c.id, poligono: c.poligono, tipo: "cuartel" as const }] : []
-  )
+    c.poligono
+      ? [{ id: c.id, poligono: c.poligono, tipo: "cuartel" as const }]
+      : [],
+  );
   const centro: [number, number] | null =
-    finca?.latitud != null && finca.longitud != null ? [finca.latitud, finca.longitud] : null
+    finca?.latitud != null && finca.longitud != null
+      ? [finca.latitud, finca.longitud]
+      : null;
 
   return (
     <EditorPoligonoDiferido
@@ -81,7 +98,7 @@ function ContornoDeFinca({
       contexto={contexto}
       centroInicial={centro}
     />
-  )
+  );
 }
 
 /**
@@ -97,42 +114,48 @@ export function FincaDialog({
   children,
 }: {
   /** Ausente = alta. */
-  finca?: Finca
-  children: ReactNode
+  finca?: Finca;
+  children: ReactNode;
 }) {
-  const [abierto, setAbierto] = useState(false)
-  const crear = useCrearFinca()
-  const actualizar = useActualizarFinca()
-  const esEdicion = finca !== undefined
+  const [abierto, setAbierto] = useState(false);
+  const crear = useCrearFinca();
+  const actualizar = useActualizarFinca();
+  const esEdicion = finca !== undefined;
 
   const form = useFormularioApi({
     schema: fincaSchema,
     defaultValues: valoresIniciales(finca),
     exito: esEdicion ? "Finca actualizada" : "Finca creada correctamente",
-    error: esEdicion ? "No se pudo actualizar la finca" : "No se pudo crear la finca",
+    error: esEdicion
+      ? "No se pudo actualizar la finca"
+      : "No se pudo crear la finca",
     // Sin `empresaId`: el backend la toma del token y rechaza la request entera
     // si viene en el body (`forbidNonWhitelisted`).
     onSubmit: async ({ poligono, hectareas, latitud, longitud, ...resto }) => {
       const datos = {
         ...resto,
-        ...datosGeograficos(finca?.poligono, poligono, { hectareas, latitud, longitud }),
-      }
+        ...datosGeograficos(finca?.poligono, poligono, {
+          hectareas,
+          latitud,
+          longitud,
+        }),
+      };
       const guardada = esEdicion
         ? await actualizar.mutateAsync({ id: finca.id, ...datos })
-        : await crear.mutateAsync(datos)
-      avisarAdvertencias(guardada)
+        : await crear.mutateAsync(datos);
+      avisarAdvertencias(guardada);
     },
     onExito: () => setAbierto(false),
-  })
+  });
 
-  const poligono = form.watch("poligono")
+  const poligono = form.watch("poligono");
 
   function alCambiar(nuevoAbierto: boolean) {
-    setAbierto(nuevoAbierto)
+    setAbierto(nuevoAbierto);
     // Al reabrir hay que releer la finca: `useFormularioApi` resetea a los
     // valores por defecto del primer render, que en edición ya quedaron viejos
     // si otro usuario la modificó mientras tanto.
-    if (nuevoAbierto) form.reset(valoresIniciales(finca))
+    if (nuevoAbierto) form.reset(valoresIniciales(finca));
   }
 
   return (
@@ -140,14 +163,20 @@ export function FincaDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{esEdicion ? `Editar ${finca.nombre}` : "Nueva finca"}</DialogTitle>
+          <DialogTitle>
+            {esEdicion ? `Editar ${finca.nombre}` : "Nueva finca"}
+          </DialogTitle>
           <DialogDescription>
-            Dibujá el contorno de la finca en el mapa: las hectáreas y el punto de ubicación
-            se calculan solos. Si preferís, cargalos a mano.
+            Dibujá el contorno de la finca en el mapa: las hectáreas y el punto
+            de ubicación se calculan solos. Si preferís, cargalos a mano.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={(e) => void form.enviar(e)} className="space-y-4" noValidate>
+          <form
+            onSubmit={(e) => void form.enviar(e)}
+            className="space-y-4"
+            noValidate
+          >
             <FormField
               control={form.control}
               name="nombre"
@@ -180,15 +209,19 @@ export function FincaDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Contorno en el mapa</FormLabel>
-                  <ContornoDeFinca finca={finca} valor={field.value} onChange={field.onChange} />
+                  <ContornoDeFinca
+                    finca={finca}
+                    valor={field.value}
+                    onChange={field.onChange}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
             />
             {poligono ? (
               <p className="text-sm text-muted-foreground">
-                Las hectáreas y la ubicación en el mapa se calculan a partir del contorno. Para
-                cargarlas a mano, quitá el contorno.
+                Las hectáreas y la ubicación en el mapa se calculan a partir del
+                contorno. Para cargarlas a mano, quitá el contorno.
               </p>
             ) : (
               <>
@@ -199,7 +232,12 @@ export function FincaDialog({
                     <FormItem>
                       <FormLabel>Hectáreas</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" min="0.01" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,7 +251,12 @@ export function FincaDialog({
                       <FormItem>
                         <FormLabel>Latitud</FormLabel>
                         <FormControl>
-                          <Input type="number" step="any" placeholder="-33.0362" {...field} />
+                          <Input
+                            type="number"
+                            step="any"
+                            placeholder="-33.0362"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -226,7 +269,12 @@ export function FincaDialog({
                       <FormItem>
                         <FormLabel>Longitud</FormLabel>
                         <FormControl>
-                          <Input type="number" step="any" placeholder="-68.8833" {...field} />
+                          <Input
+                            type="number"
+                            step="any"
+                            placeholder="-68.8833"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -240,7 +288,9 @@ export function FincaDialog({
 
             <DialogFooter>
               <Button type="submit" disabled={form.enviando}>
-                {form.enviando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                {form.enviando && (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                )}
                 {esEdicion ? "Guardar cambios" : "Crear finca"}
               </Button>
             </DialogFooter>
@@ -248,5 +298,5 @@ export function FincaDialog({
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
