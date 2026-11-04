@@ -1,15 +1,15 @@
-import { crear, obtener } from "../request"
+import { crear, modificar, obtener } from "../request";
 import {
   articulosSchema,
   ticketSchema,
   ticketsSchema,
   type ModuloAyuda,
   type TipoArticulo,
-} from "../schemas/ayuda"
+} from "../schemas/ayuda";
 
 export interface ListarArticulosParams {
-  tipo?: TipoArticulo
-  modulo?: ModuloAyuda
+  tipo?: TipoArticulo;
+  modulo?: ModuloAyuda;
 }
 
 /**
@@ -18,21 +18,30 @@ export interface ListarArticulosParams {
  * vacía, o sea un centro de ayuda sin artículos y nada que dijera por qué.
  */
 export function listarArticulos(params: ListarArticulosParams = {}) {
-  return obtener("/ayuda/articulos", articulosSchema, { params })
+  return obtener("/ayuda/articulos", articulosSchema, { params });
 }
 
 export interface CrearTicketInput {
-  modulo: ModuloAyuda
+  modulo: ModuloAyuda;
   /** `@Length(10, 1000)`: una descripción de tres palabras no es un reporte. */
-  descripcion: string
-  appVersion?: string
+  descripcion: string;
+  appVersion?: string;
 }
 
 export function crearTicket(input: CrearTicketInput) {
-  return crear("/ayuda/tickets", input, ticketSchema)
+  return crear("/ayuda/tickets", input, ticketSchema);
 }
 
 /** Solo el Propietario ve los tickets de su empresa. */
 export function listarTickets() {
-  return obtener("/ayuda/tickets", ticketsSchema)
+  return obtener("/ayuda/tickets", ticketsSchema);
+}
+
+/** Cierra o reabre un pedido de ayuda. Solo el Propietario. */
+export function cambiarEstadoTicket(id: string, estado: "abierto" | "cerrado") {
+  return modificar(
+    `/ayuda/tickets/${id}/${estado === "cerrado" ? "cerrar" : "reabrir"}`,
+    undefined,
+    ticketSchema,
+  );
 }

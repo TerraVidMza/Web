@@ -1,9 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import * as api from "@/api/endpoints/ayuda"
-import type { CrearTicketInput, ListarArticulosParams } from "@/api/endpoints/ayuda"
-import { CACHE } from "@/lib/cache"
-import type { RolNombre } from "@/auth/roles"
-import { cargarManual } from "./manual/manuales"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as api from "@/api/endpoints/ayuda";
+import type {
+  CrearTicketInput,
+  ListarArticulosParams,
+} from "@/api/endpoints/ayuda";
+import { CACHE } from "@/lib/cache";
+import type { RolNombre } from "@/auth/roles";
+import { cargarManual } from "./manual/manuales";
 
 /** El manual va empaquetado con la Web: no cambia mientras la pestaña viva. */
 export function useManual(rol: RolNombre | undefined) {
@@ -12,7 +15,7 @@ export function useManual(rol: RolNombre | undefined) {
     queryFn: () => cargarManual(rol!),
     enabled: rol !== undefined,
     staleTime: Infinity,
-  })
+  });
 }
 
 export function useArticulos(params: ListarArticulosParams) {
@@ -20,7 +23,7 @@ export function useArticulos(params: ListarArticulosParams) {
     queryKey: ["ayuda", "articulos", params],
     queryFn: () => api.listarArticulos(params),
     staleTime: CACHE.CASI_ESTATICO,
-  })
+  });
 }
 
 export function useTickets(habilitada: boolean) {
@@ -29,13 +32,29 @@ export function useTickets(habilitada: boolean) {
     queryFn: api.listarTickets,
     enabled: habilitada,
     staleTime: CACHE.OPERATIVO,
-  })
+  });
+}
+
+export function useCambiarEstadoTicket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      estado,
+    }: {
+      id: string;
+      estado: "abierto" | "cerrado";
+    }) => api.cambiarEstadoTicket(id, estado),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["ayuda", "tickets"] }),
+  });
 }
 
 export function useCrearTicket() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CrearTicketInput) => api.crearTicket(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ayuda", "tickets"] }),
-  })
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["ayuda", "tickets"] }),
+  });
 }
