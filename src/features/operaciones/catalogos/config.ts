@@ -26,6 +26,7 @@ export interface CatalogoCosteableConfig {
   listar: (incluirInactivos: boolean) => Promise<Insumo[]>
   crear: (input: CrearCatalogoCosteableInput) => Promise<Insumo>
   actualizar: (id: string, input: ActualizarCatalogoCosteableInput) => Promise<Insumo>
+  activar: (id: string) => Promise<Insumo>
   desactivar: (id: string) => Promise<Insumo>
   costos: (id: string) => Promise<CostoVigencia[]>
   fijarCosto: (id: string, input: NuevoCostoInput) => Promise<CostoVigencia>
@@ -40,6 +41,7 @@ export const INSUMOS: CatalogoCosteableConfig = {
   listar: api.listarInsumos,
   crear: api.crearInsumo,
   actualizar: api.actualizarInsumo,
+  activar: api.activarInsumo,
   desactivar: api.desactivarInsumo,
   costos: api.costosDeInsumo,
   fijarCosto: api.fijarCostoDeInsumo,
@@ -54,6 +56,7 @@ export const TIPOS_LABOR: CatalogoCosteableConfig = {
   listar: api.listarTiposLabor,
   crear: api.crearTipoLabor,
   actualizar: api.actualizarTipoLabor,
+  activar: api.activarTipoLabor,
   desactivar: api.desactivarTipoLabor,
   costos: api.costosDeTipoLabor,
   fijarCosto: api.fijarCostoDeTipoLabor,

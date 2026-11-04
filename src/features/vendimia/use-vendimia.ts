@@ -175,6 +175,14 @@ export function useActualizarCuadrilla() {
   })
 }
 
+export function useActivarCuadrilla() {
+  const invalidar = useInvalidarCuadrillas()
+  return useMutation({
+    mutationFn: (id: string) => api.activarCuadrilla(id),
+    onSuccess: invalidar,
+  })
+}
+
 export function useDesactivarCuadrilla() {
   const invalidar = useInvalidarCuadrillas()
   return useMutation({

@@ -67,6 +67,10 @@ export function actualizarCuartel(id: string, input: ActualizarCuartelInput) {
   return modificar(`/cuarteles/${id}`, input, cuartelSchema)
 }
 
+export function activarCuartel(id: string) {
+  return modificar(`/cuarteles/${id}/activar`, undefined, cuartelSchema)
+}
+
 export function desactivarCuartel(id: string) {
   return modificar(`/cuarteles/${id}/desactivar`, undefined, cuartelSchema)
 }

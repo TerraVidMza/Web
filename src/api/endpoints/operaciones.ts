@@ -106,6 +106,10 @@ export function actualizarInsumo(
   return modificar(`/insumos/${id}`, input, insumoSchema);
 }
 
+export function activarInsumo(id: string) {
+  return modificar(`/insumos/${id}/activar`, undefined, insumoSchema)
+}
+
 export function desactivarInsumo(id: string) {
   return modificar(`/insumos/${id}/desactivar`, undefined, insumoSchema);
 }
@@ -135,6 +139,10 @@ export function actualizarTipoLabor(
   input: ActualizarCatalogoCosteableInput,
 ) {
   return modificar(`/tipos-labor/${id}`, input, tipoLaborSchema);
+}
+
+export function activarTipoLabor(id: string) {
+  return modificar(`/tipos-labor/${id}/activar`, undefined, tipoLaborSchema)
 }
 
 export function desactivarTipoLabor(id: string) {

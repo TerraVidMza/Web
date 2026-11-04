@@ -134,6 +134,10 @@ export function actualizarCuadrilla(id: string, input: ActualizarCuadrillaInput)
   return modificar(`/cuadrillas/${id}`, input, cuadrillaSchema)
 }
 
+export function activarCuadrilla(id: string) {
+  return modificar(`/cuadrillas/${id}/activar`, undefined, cuadrillaSchema)
+}
+
 export function desactivarCuadrilla(id: string) {
   return modificar(`/cuadrillas/${id}/desactivar`, undefined, cuadrillaSchema)
 }

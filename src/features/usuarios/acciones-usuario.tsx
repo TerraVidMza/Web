@@ -1,6 +1,6 @@
 import { toast } from "sonner"
-import { MoreHorizontal, Pencil, UserX } from "lucide-react"
-import { useDesactivarUsuario } from "./use-usuarios"
+import { MoreHorizontal, Pencil, RotateCcw, UserX } from "lucide-react"
+import { useActivarUsuario, useDesactivarUsuario } from "./use-usuarios"
 import { EditarUsuarioDialog } from "./editar-usuario-dialog"
 import type { Usuario } from "@/api/schemas/usuario"
 import { useAuth } from "@/context/auth-context"
@@ -15,6 +15,7 @@ import {
 
 export function AccionesUsuario({ usuario }: { usuario: Usuario }) {
   const desactivar = useDesactivarUsuario()
+  const activar = useActivarUsuario()
   const { user } = useAuth()
   const esUnoMismo = user?.id === usuario.id
 
@@ -36,7 +37,7 @@ export function AccionesUsuario({ usuario }: { usuario: Usuario }) {
         {usuario.activo && !esUnoMismo && (
           <DialogoConfirmacion
             titulo={`¿Desactivar a ${usuario.nombre}?`}
-            descripcion="No va a poder iniciar sesión. Podés reactivarlo después desde Editar."
+            descripcion="No va a poder iniciar sesión. Podés reactivarlo después con «Reactivar»."
             textoConfirmar="Desactivar"
             errorPorDefecto="No se pudo desactivar el usuario"
             onConfirmar={async () => {
@@ -47,6 +48,25 @@ export function AccionesUsuario({ usuario }: { usuario: Usuario }) {
             <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
               <UserX className="size-4" aria-hidden="true" />
               Desactivar
+            </DropdownMenuItem>
+          </DialogoConfirmacion>
+        )}
+
+        {!usuario.activo && (
+          <DialogoConfirmacion
+            titulo={`¿Reactivar a ${usuario.nombre}?`}
+            descripcion="Vuelve a poder iniciar sesión con su contraseña de siempre y conserva sus fincas asignadas."
+            textoConfirmar="Reactivar"
+            tono="confirmacion"
+            errorPorDefecto="No se pudo reactivar el usuario"
+            onConfirmar={async () => {
+              await activar.mutateAsync(usuario.id)
+              toast.success(`${usuario.nombre} está activo de nuevo`)
+            }}
+          >
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <RotateCcw className="size-4" aria-hidden="true" />
+              Reactivar
             </DropdownMenuItem>
           </DialogoConfirmacion>
         )}

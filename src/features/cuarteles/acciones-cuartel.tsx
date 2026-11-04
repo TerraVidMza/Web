@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { History, MoreHorizontal, Pencil, Power } from "lucide-react"
-import { useDesactivarCuartel } from "./use-cuarteles"
+import { History, MoreHorizontal, Pencil, Power, RotateCcw } from "lucide-react"
+import { useActivarCuartel, useDesactivarCuartel } from "./use-cuarteles"
 import { CuartelDialog } from "./cuartel-dialog"
 import type { Cuartel } from "@/api/schemas/cuartel"
 import { useAuth } from "@/context/auth-context"
@@ -24,6 +24,7 @@ import {
 export function AccionesCuartel({ cuartel }: { cuartel: Cuartel }) {
   const { user } = useAuth()
   const desactivar = useDesactivarCuartel()
+  const activar = useActivarCuartel()
   const puedeEditar = puede(user, "cuartelesEscritura")
   const puedeDarDeBaja = puede(user, "cuartelesBaja")
   const puedeVerHistorial = puede(user, "historialLabores")
@@ -70,6 +71,25 @@ export function AccionesCuartel({ cuartel }: { cuartel: Cuartel }) {
             <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()}>
               <Power className="size-4" aria-hidden="true" />
               Dar de baja
+            </DropdownMenuItem>
+          </DialogoConfirmacion>
+        )}
+
+        {puedeDarDeBaja && !cuartel.activo && (
+          <DialogoConfirmacion
+            titulo={`¿Reactivar ${cuartel.nombre}?`}
+            descripcion="Vuelve a aparecer en los listados y a aceptar labores y pesajes. Su finca tiene que estar activa."
+            textoConfirmar="Reactivar"
+            tono="confirmacion"
+            errorPorDefecto="No se pudo reactivar el cuartel"
+            onConfirmar={async () => {
+              await activar.mutateAsync(cuartel.id)
+              toast.success(`${cuartel.nombre} está activo de nuevo`)
+            }}
+          >
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <RotateCcw className="size-4" aria-hidden="true" />
+              Reactivar
             </DropdownMenuItem>
           </DialogoConfirmacion>
         )}
