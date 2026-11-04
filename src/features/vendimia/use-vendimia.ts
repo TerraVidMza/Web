@@ -79,6 +79,15 @@ export function useAprobarRemito() {
   })
 }
 
+export function useAnularRemito() {
+  const invalidar = useInvalidarCircuito()
+  return useMutation({
+    mutationFn: ({ id, motivo }: { id: string; motivo: string }) =>
+      api.anularRemito(id, motivo),
+    onSuccess: invalidar,
+  })
+}
+
 export function useRechazarRemito() {
   const invalidar = useInvalidarCircuito()
   return useMutation({

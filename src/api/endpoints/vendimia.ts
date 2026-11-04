@@ -57,6 +57,15 @@ export function rechazarRemito(id: string, motivoRechazo: string) {
   return crear(`/remitos/${id}/rechazar`, { motivoRechazo }, remitoSchema)
 }
 
+/**
+ * Anula un remito **aprobado** por error. Solo el Propietario, con motivo de al
+ * menos 10 caracteres, y solo si la bodega todavía no tiene la liquidación
+ * cargada: si la tiene, el backend responde 409.
+ */
+export function anularRemito(id: string, motivoAnulacion: string) {
+  return crear(`/remitos/${id}/anular`, { motivoAnulacion }, remitoSchema)
+}
+
 export interface LiquidacionInput {
   bodega: string
   kgAceptados: number
