@@ -1,34 +1,34 @@
-import { useMemo, useState } from "react"
-import { History, X } from "lucide-react"
-import { useAuditoria } from "./use-auditoria"
-import { DetalleCambios } from "./detalle-cambios"
+import { useMemo, useState } from "react";
+import { History, X } from "lucide-react";
+import { useAuditoria } from "./use-auditoria";
+import { DetalleCambios } from "./detalle-cambios";
 import {
   ACCIONES_AUDITABLES,
   ENTIDADES_AUDITABLES,
   etiquetaAccion,
   etiquetaEntidad,
-} from "./vocabulario"
-import { useFormato } from "@/context/configuracion-context"
-import { ETIQUETA_ROL } from "@/auth/roles"
-import { TablaPaginada } from "@/components/datos/tabla-paginada"
-import { usePaginacion } from "@/components/datos/paginacion"
-import { Link } from "react-router-dom"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { TableCell, TableHead, TableRow } from "@/components/ui/table"
+} from "./vocabulario";
+import { useFormato } from "@/context/configuracion-context";
+import { ETIQUETA_ROL } from "@/auth/roles";
+import { TablaPaginada } from "@/components/datos/tabla-paginada";
+import { usePaginacion } from "@/components/datos/paginacion";
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { TableCell, TableHead, TableRow } from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
-const TODAS = "todas"
+const TODAS = "todas";
 
-const FILTROS_VACIOS = { accion: TODAS, entidad: TODAS, desde: "", hasta: "" }
+const FILTROS_VACIOS = { accion: TODAS, entidad: TODAS, desde: "", hasta: "" };
 
 /**
  * Log de auditoría (HU-07).
@@ -38,9 +38,9 @@ const FILTROS_VACIOS = { accion: TODAS, entidad: TODAS, desde: "", hasta: "" }
  * dos, así que el rol entraba al sistema y no podía hacer nada.
  */
 export function AuditoriaPage() {
-  const [filtros, setFiltros] = useState(FILTROS_VACIOS)
-  const paginacion = usePaginacion()
-  const formato = useFormato()
+  const [filtros, setFiltros] = useState(FILTROS_VACIOS);
+  const paginacion = usePaginacion();
+  const formato = useFormato();
 
   const params = useMemo(
     () => ({
@@ -51,22 +51,23 @@ export function AuditoriaPage() {
       ...(filtros.desde ? { desde: filtros.desde } : {}),
       ...(filtros.hasta ? { hasta: filtros.hasta } : {}),
     }),
-    [paginacion.page, paginacion.pageSize, filtros]
-  )
+    [paginacion.page, paginacion.pageSize, filtros],
+  );
 
-  const consulta = useAuditoria(params)
+  const consulta = useAuditoria(params);
   const hayFiltros = Object.entries(filtros).some(
-    ([clave, valor]) => valor !== FILTROS_VACIOS[clave as keyof typeof FILTROS_VACIOS]
-  )
+    ([clave, valor]) =>
+      valor !== FILTROS_VACIOS[clave as keyof typeof FILTROS_VACIOS],
+  );
 
   function cambiar<K extends keyof typeof filtros>(clave: K, valor: string) {
-    setFiltros((previos) => ({ ...previos, [clave]: valor }))
-    paginacion.reiniciar()
+    setFiltros((previos) => ({ ...previos, [clave]: valor }));
+    paginacion.reiniciar();
   }
 
   function limpiar() {
-    setFiltros(FILTROS_VACIOS)
-    paginacion.reiniciar()
+    setFiltros(FILTROS_VACIOS);
+    paginacion.reiniciar();
   }
 
   return (
@@ -74,14 +75,18 @@ export function AuditoriaPage() {
       <div>
         <h1 className="text-xl font-semibold">Log de auditoría</h1>
         <p className="text-sm text-muted-foreground">
-          Quién hizo cada cambio, cuándo y desde qué IP. El registro es de solo lectura.
+          Quién hizo cada cambio, cuándo y desde qué IP. El registro es de solo
+          lectura.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="filtro-accion">Acción</Label>
-          <Select value={filtros.accion} onValueChange={(v) => cambiar("accion", v)}>
+          <Select
+            value={filtros.accion}
+            onValueChange={(v) => cambiar("accion", v)}
+          >
             <SelectTrigger id="filtro-accion" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -98,7 +103,10 @@ export function AuditoriaPage() {
 
         <div className="space-y-1.5">
           <Label htmlFor="filtro-entidad">Entidad</Label>
-          <Select value={filtros.entidad} onValueChange={(v) => cambiar("entidad", v)}>
+          <Select
+            value={filtros.entidad}
+            onValueChange={(v) => cambiar("entidad", v)}
+          >
             <SelectTrigger id="filtro-entidad" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -174,15 +182,18 @@ export function AuditoriaPage() {
         }
         fila={(evento) => (
           <TableRow key={evento.id}>
-            <TableCell className="whitespace-nowrap text-muted-foreground">
+            <TableCell className="text-muted-foreground">
               {formato.fechaHora(evento.createdAt)}
             </TableCell>
-            <TableCell>
-              <Badge variant="outline" className="font-mono text-xs">
+            <TableCell className="whitespace-normal">
+              <Badge
+                variant="outline"
+                className="h-auto max-w-full font-mono text-xs break-all whitespace-normal"
+              >
                 {evento.accion}
               </Badge>
             </TableCell>
-            <TableCell>
+            <TableCell className="whitespace-normal">
               {/*
                 El Auditor no puede listar cuarteles —`GET /cuarteles` es
                 `@Roles(P, A, C)`—, así que este enlace es su **única** vía de
@@ -195,30 +206,35 @@ export function AuditoriaPage() {
                 >
                   <History className="size-3.5" aria-hidden="true" />
                   Cuartel
-                  <span className="sr-only">: ver su historial de operaciones</span>
+                  <span className="sr-only">
+                    : ver su historial de operaciones
+                  </span>
                 </Link>
               ) : (
                 etiquetaEntidad(evento.entidad)
               )}
             </TableCell>
-            <TableCell>
+            <TableCell className="whitespace-normal">
               <div className="flex flex-col">
-                <span className="font-medium">{evento.actor?.nombre ?? "—"}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="font-medium">
+                  {evento.actor?.nombre ?? "—"}
+                </span>
+                <span className="text-xs break-all text-muted-foreground">
                   {evento.actor?.email ?? evento.actorId}
-                  {evento.actor?.rol && ` · ${ETIQUETA_ROL[evento.actor.rol.nombreRol]}`}
+                  {evento.actor?.rol &&
+                    ` · ${ETIQUETA_ROL[evento.actor.rol.nombreRol]}`}
                 </span>
               </div>
             </TableCell>
-            <TableCell>
+            <TableCell className="whitespace-normal">
               <DetalleCambios evento={evento} />
             </TableCell>
-            <TableCell className="font-mono text-xs text-muted-foreground">
+            <TableCell className="font-mono text-xs break-all whitespace-normal text-muted-foreground">
               {evento.ipAddress ?? "—"}
             </TableCell>
           </TableRow>
         )}
       />
     </div>
-  )
+  );
 }
