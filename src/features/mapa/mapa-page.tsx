@@ -46,6 +46,7 @@ export function MapaPage() {
           longitud: f.longitud as number,
           tipo: "finca" as const,
           hectareas: f.hectareas,
+          poligono: f.poligono,
         }))
     }
     const finca = fincas.data?.find((f) => f.id === fincaId)
@@ -59,6 +60,7 @@ export function MapaPage() {
         tipo: "cuartel" as const,
         estado: c.estado,
         hectareas: c.hectareas,
+        poligono: c.poligono,
         fincaNombre: finca?.nombre,
         fincaId: c.fincaId,
       }))

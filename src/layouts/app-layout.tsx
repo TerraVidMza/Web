@@ -49,7 +49,7 @@ function Marca({ variante = "auto" }: { variante?: "auto" | "oscuro" | "claro" }
   const { nombreOrganizacion } = useFormato()
   return (
     <div className="flex items-center gap-2">
-      <Logo variante={variante} className="size-6" />
+      <Logo variante={variante} className="h-8 w-auto" />
       <span className="font-semibold">{nombreOrganizacion ?? "TerraVid"}</span>
     </div>
   )

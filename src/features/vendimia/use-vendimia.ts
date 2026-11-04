@@ -190,3 +190,19 @@ export function useFijarTarifa() {
     onSuccess: invalidar,
   })
 }
+
+/** Corregir un pesaje observado lo devuelve al circuito: mueve remitos, cosecha y costeo. */
+export function useCorregirPesaje() {
+  const invalidar = useInvalidarCircuito()
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...input
+    }: {
+      id: string
+      kgTotales?: number
+      fecha?: string
+    }) => api.corregirPesaje(id, input),
+    onSuccess: invalidar,
+  })
+}

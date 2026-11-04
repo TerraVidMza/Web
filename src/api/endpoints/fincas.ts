@@ -1,12 +1,20 @@
 import { crear, modificar, obtener } from "../request"
 import { fincaDetalleSchema, fincasSchema } from "../schemas/finca"
+import type { PoligonoGeoJson } from "../schemas/geo"
 
 export interface CrearFincaInput {
   nombre: string
   ubicacion?: string
-  hectareas: number
+  /** Obligatoria solo si no se manda `poligono`: con polígono se calcula de él. */
+  hectareas?: number
   latitud?: number
   longitud?: number
+  /**
+   * Contorno de la finca (D-037). En una edición, `null` lo quita y devuelve la
+   * finca a la carga manual. Con polígono el backend deriva hectáreas y punto, y
+   * **rechaza (400) un cambio manual de esos tres campos**: no hay que mandarlos.
+   */
+  poligono?: PoligonoGeoJson | null
 }
 
 /**

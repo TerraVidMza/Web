@@ -1,8 +1,14 @@
 import { useState, type ReactNode } from "react"
 import { z } from "zod"
 import { Loader2 } from "lucide-react"
-import { useActualizarCuartel, useCrearCuartel } from "./use-cuarteles"
+import { useActualizarCuartel, useCrearCuartel, useCuartelesDeFinca } from "./use-cuarteles"
 import { useCatalogo } from "@/features/catalogos/use-catalogos"
+import { useFincas } from "@/features/fincas/use-fincas"
+import { EditorPoligonoDiferido } from "@/features/mapa/editor-poligono-diferido"
+import type { CapaDeContexto } from "@/features/mapa/editor-poligono"
+import { poligonoSchema, type PoligonoGeoJson } from "@/api/schemas/geo"
+import { datosGeograficos } from "@/lib/poligono-payload"
+import { avisarAdvertencias } from "@/components/formulario/avisar-advertencias"
 import { CatalogoTipo } from "@/api/schemas/catalogo"
 import type { Cuartel } from "@/api/schemas/cuartel"
 import {
@@ -45,6 +51,7 @@ const cuartelSchema = z.object({
   hectareas: hectareasOpcional,
   latitud,
   longitud,
+  poligono: poligonoSchema.nullable(),
 })
 
 function valoresIniciales(cuartel?: Cuartel) {
@@ -57,7 +64,50 @@ function valoresIniciales(cuartel?: Cuartel) {
     hectareas: cuartel?.hectareas != null ? String(cuartel.hectareas) : "",
     latitud: cuartel?.latitud != null ? String(cuartel.latitud) : "",
     longitud: cuartel?.longitud != null ? String(cuartel.longitud) : "",
+    poligono: cuartel?.poligono ?? null,
   }
+}
+
+/**
+ * Mapa para dibujar el contorno del cuartel, con el de la finca y el de los
+ * otros cuarteles de fondo para dibujar adentro. Componente aparte: sus
+ * consultas se hacen recién cuando el diálogo se abre.
+ */
+function ContornoDeCuartel({
+  fincaId,
+  cuartelId,
+  valor,
+  onChange,
+}: {
+  fincaId: string
+  cuartelId?: string
+  valor: PoligonoGeoJson | null
+  onChange: (poligono: PoligonoGeoJson | null) => void
+}) {
+  const fincas = useFincas()
+  const hermanos = useCuartelesDeFinca(fincaId)
+  const finca = fincas.data?.find((f) => f.id === fincaId)
+
+  const contexto: CapaDeContexto[] = [
+    ...(finca?.poligono ? [{ id: finca.id, poligono: finca.poligono, tipo: "finca" as const }] : []),
+    ...(hermanos.data ?? []).flatMap((c) =>
+      c.poligono && c.id !== cuartelId
+        ? [{ id: c.id, poligono: c.poligono, tipo: "cuartel" as const }]
+        : []
+    ),
+  ]
+  const centro: [number, number] | null =
+    finca?.latitud != null && finca.longitud != null ? [finca.latitud, finca.longitud] : null
+
+  return (
+    <EditorPoligonoDiferido
+      entidad="cuartel"
+      valor={valor}
+      onChange={onChange}
+      contexto={contexto}
+      centroInicial={centro}
+    />
+  )
 }
 
 /** Alta y edición de cuartel (HU-09). */
@@ -83,17 +133,22 @@ export function CuartelDialog({
     defaultValues: valoresIniciales(cuartel),
     exito: esEdicion ? "Cuartel actualizado" : "Cuartel creado correctamente",
     error: esEdicion ? "No se pudo actualizar el cuartel" : "No se pudo crear el cuartel",
-    onSubmit: async (valores) => {
-      if (esEdicion) {
-        // `fincaId` no va: el backend lo omite del DTO de update porque un
-        // cuartel no cambia de finca.
-        await actualizar.mutateAsync({ id: cuartel.id, ...valores })
-      } else {
-        await crear.mutateAsync({ ...valores, fincaId })
+    onSubmit: async ({ poligono, hectareas, latitud, longitud, ...resto }) => {
+      const datos = {
+        ...resto,
+        ...datosGeograficos(cuartel?.poligono, poligono, { hectareas, latitud, longitud }),
       }
+      // `fincaId` no va en la edición: el backend lo omite del DTO de update
+      // porque un cuartel no cambia de finca.
+      const guardado = esEdicion
+        ? await actualizar.mutateAsync({ id: cuartel.id, ...datos })
+        : await crear.mutateAsync({ ...datos, fincaId })
+      avisarAdvertencias(guardado)
     },
     onExito: () => setAbierto(false),
   })
+
+  const poligono = form.watch("poligono")
 
   function alCambiar(nuevoAbierto: boolean) {
     setAbierto(nuevoAbierto)
@@ -103,7 +158,7 @@ export function CuartelDialog({
   return (
     <Dialog open={abierto} onOpenChange={alCambiar}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-h-[90svh] overflow-y-auto">
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{esEdicion ? `Editar ${cuartel.nombre}` : "Nuevo cuartel"}</DialogTitle>
           <DialogDescription>
@@ -204,45 +259,70 @@ export function CuartelDialog({
             </div>
             <FormField
               control={form.control}
-              name="hectareas"
+              name="poligono"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hectáreas</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" min="0.01" {...field} />
-                  </FormControl>
+                  <FormLabel>Contorno en el mapa</FormLabel>
+                  <ContornoDeCuartel
+                    fincaId={fincaId}
+                    cuartelId={cuartel?.id}
+                    valor={field.value}
+                    onChange={field.onChange}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="latitud"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Latitud</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="any" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="longitud"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Longitud</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="any" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {poligono ? (
+              <p className="text-sm text-muted-foreground">
+                Las hectáreas y la ubicación en el mapa se calculan a partir del contorno. Para
+                cargarlas a mano, quitá el contorno.
+              </p>
+            ) : (
+              <>
+                <FormField
+                  control={form.control}
+                  name="hectareas"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hectáreas</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" min="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="latitud"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitud</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="any" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="longitud"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitud</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="any" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
 
             <ErrorDelServidor form={form} />
 

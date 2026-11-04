@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { decimal, fechaHora, opcional, paginado, uuid } from "./comunes"
 import { catalogoRefSchema } from "./catalogo"
+import { advertenciasSchema, poligonoSchema } from "./geo"
 
 /**
  * Estado del cuartel en el ciclo de vendimia (`estado-cuartel.enum.ts`).
@@ -29,6 +30,10 @@ export const cuartelSchema = z.object({
   hectareas: opcional(decimal),
   latitud: opcional(decimal),
   longitud: opcional(decimal),
+  /** Contorno del cuartel. Con polígono, hectáreas y punto se derivan de él. */
+  poligono: opcional(poligonoSchema),
+  /** Solo en la respuesta de un alta o edición; ver `advertenciasSchema`. */
+  advertencias: advertenciasSchema,
   estado: estadoCuartelSchema,
   activo: z.boolean(),
   createdAt: fechaHora,

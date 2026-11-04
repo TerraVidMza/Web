@@ -5,6 +5,7 @@ import {
   estadoCosechaFincaSchema,
   liquidacionONuloSchema,
   liquidacionSchema,
+  pesajeSchema,
   pesajesPaginadosSchema,
   remitoDetalleSchema,
   remitoSchema,
@@ -134,4 +135,16 @@ export function tarifasDeCuadrilla(id: string) {
 
 export function fijarTarifa(id: string, input: TarifaInput) {
   return crear(`/cuadrillas/${id}/tarifas`, input, tarifaCuadrillaSchema)
+}
+
+/**
+ * Corrige un pesaje `observado` (el remito que lo contenía fue rechazado) y lo
+ * devuelve al circuito. El backend rechaza (400) cualquier otro estado y
+ * recalcula la tarifa y el monto con los datos nuevos.
+ */
+export function corregirPesaje(
+  id: string,
+  input: { kgTotales?: number; fecha?: string; cuadrillaId?: string }
+) {
+  return modificar(`/pesajes-vendimia/${id}`, input, pesajeSchema)
 }

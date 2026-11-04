@@ -3,7 +3,13 @@ import { z } from "zod"
 import { Loader2 } from "lucide-react"
 import { useActualizarFinca, useCrearFinca } from "./use-fincas"
 import type { Finca } from "@/api/schemas/finca"
-import { hectareas, latitud, longitud, nombreCorto, ubicacion } from "@/lib/campos"
+import { poligonoSchema, type PoligonoGeoJson } from "@/api/schemas/geo"
+import { hectareasOpcional, latitud, longitud, nombreCorto, ubicacion } from "@/lib/campos"
+import { datosGeograficos } from "@/lib/poligono-payload"
+import { useCuartelesDeFinca } from "@/features/cuarteles/use-cuarteles"
+import { EditorPoligonoDiferido } from "@/features/mapa/editor-poligono-diferido"
+import type { CapaDeContexto } from "@/features/mapa/editor-poligono"
+import { avisarAdvertencias } from "@/components/formulario/avisar-advertencias"
 import { useFormularioApi } from "@/components/formulario/use-formulario-api"
 import { ErrorDelServidor } from "@/components/formulario/error-del-servidor"
 import { Button } from "@/components/ui/button"
@@ -19,13 +25,20 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
-const fincaSchema = z.object({
-  nombre: nombreCorto,
-  ubicacion,
-  hectareas,
-  latitud,
-  longitud,
-})
+const fincaSchema = z
+  .object({
+    nombre: nombreCorto,
+    ubicacion,
+    hectareas: hectareasOpcional,
+    latitud,
+    longitud,
+    poligono: poligonoSchema.nullable(),
+  })
+  // Con contorno las hectáreas las calcula el backend; sin él siguen siendo obligatorias.
+  .refine((v) => v.poligono !== null || v.hectareas !== undefined, {
+    message: "Ingresá las hectáreas o dibujá el contorno",
+    path: ["hectareas"],
+  })
 
 /** Los `<input>` devuelven strings; el número vacío se representa como `""`. */
 function valoresIniciales(finca?: Finca) {
@@ -35,7 +48,40 @@ function valoresIniciales(finca?: Finca) {
     hectareas: finca ? String(finca.hectareas) : "",
     latitud: finca?.latitud != null ? String(finca.latitud) : "",
     longitud: finca?.longitud != null ? String(finca.longitud) : "",
+    poligono: finca?.poligono ?? null,
   }
+}
+
+/**
+ * Mapa para dibujar el contorno. Es un componente aparte para que los cuarteles
+ * de la finca (que se dibujan de fondo) se pidan recién cuando el diálogo se
+ * abre, y no una vez por cada fila de la lista.
+ */
+function ContornoDeFinca({
+  finca,
+  valor,
+  onChange,
+}: {
+  finca?: Finca
+  valor: PoligonoGeoJson | null
+  onChange: (poligono: PoligonoGeoJson | null) => void
+}) {
+  const cuarteles = useCuartelesDeFinca(finca?.id ?? "")
+  const contexto: CapaDeContexto[] = (cuarteles.data ?? []).flatMap((c) =>
+    c.poligono ? [{ id: c.id, poligono: c.poligono, tipo: "cuartel" as const }] : []
+  )
+  const centro: [number, number] | null =
+    finca?.latitud != null && finca.longitud != null ? [finca.latitud, finca.longitud] : null
+
+  return (
+    <EditorPoligonoDiferido
+      entidad="finca"
+      valor={valor}
+      onChange={onChange}
+      contexto={contexto}
+      centroInicial={centro}
+    />
+  )
 }
 
 /**
@@ -66,15 +112,20 @@ export function FincaDialog({
     error: esEdicion ? "No se pudo actualizar la finca" : "No se pudo crear la finca",
     // Sin `empresaId`: el backend la toma del token y rechaza la request entera
     // si viene en el body (`forbidNonWhitelisted`).
-    onSubmit: async (valores) => {
-      if (esEdicion) {
-        await actualizar.mutateAsync({ id: finca.id, ...valores })
-      } else {
-        await crear.mutateAsync(valores)
+    onSubmit: async ({ poligono, hectareas, latitud, longitud, ...resto }) => {
+      const datos = {
+        ...resto,
+        ...datosGeograficos(finca?.poligono, poligono, { hectareas, latitud, longitud }),
       }
+      const guardada = esEdicion
+        ? await actualizar.mutateAsync({ id: finca.id, ...datos })
+        : await crear.mutateAsync(datos)
+      avisarAdvertencias(guardada)
     },
     onExito: () => setAbierto(false),
   })
+
+  const poligono = form.watch("poligono")
 
   function alCambiar(nuevoAbierto: boolean) {
     setAbierto(nuevoAbierto)
@@ -87,12 +138,12 @@ export function FincaDialog({
   return (
     <Dialog open={abierto} onOpenChange={alCambiar}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{esEdicion ? `Editar ${finca.nombre}` : "Nueva finca"}</DialogTitle>
           <DialogDescription>
-            Cargá los datos básicos de la finca. Las coordenadas son opcionales y se usan
-            para ubicarla en el mapa.
+            Dibujá el contorno de la finca en el mapa: las hectáreas y el punto de ubicación
+            se calculan solos. Si preferís, cargalos a mano.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -125,45 +176,65 @@ export function FincaDialog({
             />
             <FormField
               control={form.control}
-              name="hectareas"
+              name="poligono"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hectáreas</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" min="0.01" {...field} />
-                  </FormControl>
+                  <FormLabel>Contorno en el mapa</FormLabel>
+                  <ContornoDeFinca finca={finca} valor={field.value} onChange={field.onChange} />
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="latitud"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Latitud</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="any" placeholder="-33.0362" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="longitud"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Longitud</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="any" placeholder="-68.8833" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {poligono ? (
+              <p className="text-sm text-muted-foreground">
+                Las hectáreas y la ubicación en el mapa se calculan a partir del contorno. Para
+                cargarlas a mano, quitá el contorno.
+              </p>
+            ) : (
+              <>
+                <FormField
+                  control={form.control}
+                  name="hectareas"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hectáreas</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" min="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="latitud"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latitud</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="any" placeholder="-33.0362" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="longitud"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Longitud</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="any" placeholder="-68.8833" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
 
             <ErrorDelServidor form={form} />
 
