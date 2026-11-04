@@ -19,7 +19,7 @@ function Navegacion({ alNavegar }: { alNavegar?: () => void }) {
   const visibles = NAV_ITEMS.filter((item) => puede(user, item.permiso))
 
   return (
-    <nav aria-label="Secciones" className="flex-1 space-y-1 p-3">
+    <nav aria-label="Secciones" className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
       {visibles.map((item) => (
         <NavLink
           key={item.to}
@@ -99,7 +99,7 @@ export function AppLayout() {
   const location = useLocation()
 
   return (
-    <div className="flex min-h-svh">
+    <div className="flex h-svh print:h-auto">
       {/* Salto al contenido: sin esto, con teclado hay que tabular por todo el
           menú en cada página. */}
       <a
@@ -119,7 +119,7 @@ export function AppLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between gap-2 border-b px-4 print:hidden">
           {/*
             Navegación mobile (W7). Abajo de 768 px el `<aside>` está oculto y
@@ -166,7 +166,7 @@ export function AppLayout() {
           // La `key` reinicia el scroll al cambiar de ruta: sin esto se entra a
           // la pantalla nueva a la altura a la que estaba la anterior.
           key={location.pathname}
-          className="flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6 print:overflow-visible print:bg-white print:p-0"
+          className="min-h-0 flex-1 overflow-y-auto bg-muted/30 p-4 md:p-6 print:overflow-visible print:bg-white print:p-0"
         >
           <Outlet />
         </main>
