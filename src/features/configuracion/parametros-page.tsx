@@ -140,9 +140,11 @@ function Campo({
   const invalido = fueraDeRango(campo, valor)
 
   return (
-    <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
-      <div className="space-y-1.5">
-        <Label htmlFor={`config-${campo.clave}`}>{campo.etiqueta}</Label>
+    <div className="space-y-1.5">
+      <Label htmlFor={`config-${campo.clave}`}>{campo.etiqueta}</Label>
+      {/* El botón va al lado del input y no de todo el bloque: con la ayuda
+          debajo, alinearlo al fondo lo dejaba flotando fuera de línea. */}
+      <div className="grid grid-cols-[1fr_auto] gap-2">
         <Input
           id={`config-${campo.clave}`}
           type={campo.tipo ?? "text"}
@@ -154,16 +156,16 @@ function Campo({
           autoComplete={esSecreta ? "new-password" : "off"}
           onChange={(e) => setValor(e.target.value)}
         />
-        {campo.ayuda && <p className="text-xs text-muted-foreground">{campo.ayuda}</p>}
+        <Button
+          variant="outline"
+          disabled={sinCambios || invalido || guardando}
+          onClick={() => void onGuardar(valor)}
+        >
+          {guardando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          Guardar
+        </Button>
       </div>
-      <Button
-        variant="outline"
-        disabled={sinCambios || invalido || guardando}
-        onClick={() => void onGuardar(valor)}
-      >
-        {guardando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-        Guardar
-      </Button>
+      {campo.ayuda && <p className="text-xs text-muted-foreground">{campo.ayuda}</p>}
     </div>
   )
 }

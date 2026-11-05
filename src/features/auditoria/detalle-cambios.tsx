@@ -1,11 +1,11 @@
-import { useState } from "react"
-import { ChevronDown, ChevronRight } from "lucide-react"
-import type { LogAuditoria } from "@/api/schemas/log-auditoria"
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import type { LogAuditoria } from "@/api/schemas/log-auditoria";
 
 function comoTexto(valor: unknown): string {
-  if (valor === null || valor === undefined) return "—"
-  if (typeof valor === "object") return JSON.stringify(valor)
-  return String(valor)
+  if (valor === null || valor === undefined) return "—";
+  if (typeof valor === "object") return JSON.stringify(valor);
+  return String(valor);
 }
 
 /**
@@ -19,15 +19,15 @@ function comoTexto(valor: unknown): string {
  * tokens—, así que lo que llega es seguro de mostrar.
  */
 export function DetalleCambios({ evento }: { evento: LogAuditoria }) {
-  const [abierto, setAbierto] = useState(false)
-  const antes = evento.datosAnteriores ?? {}
-  const despues = evento.datosNuevos ?? {}
+  const [abierto, setAbierto] = useState(false);
+  const antes = evento.datosAnteriores ?? {};
+  const despues = evento.datosNuevos ?? {};
   const claves = [...new Set([...Object.keys(antes), ...Object.keys(despues)])]
     .filter((clave) => comoTexto(antes[clave]) !== comoTexto(despues[clave]))
-    .sort((a, b) => a.localeCompare(b))
+    .sort((a, b) => a.localeCompare(b));
 
   if (claves.length === 0) {
-    return <span className="text-xs text-muted-foreground">Sin detalle</span>
+    return <span className="text-xs text-muted-foreground">Sin detalle</span>;
   }
 
   return (
@@ -51,13 +51,14 @@ export function DetalleCambios({ evento }: { evento: LogAuditoria }) {
           {claves.map((clave) => (
             <div key={clave} className="flex flex-wrap gap-x-2">
               <dt className="font-medium">{clave}:</dt>
-              <dd className="text-muted-foreground">
-                <del>{comoTexto(antes[clave])}</del> → <ins>{comoTexto(despues[clave])}</ins>
+              <dd className="min-w-0 break-all text-muted-foreground">
+                <del>{comoTexto(antes[clave])}</del> →{" "}
+                <ins>{comoTexto(despues[clave])}</ins>
               </dd>
             </div>
           ))}
         </dl>
       )}
     </div>
-  )
+  );
 }

@@ -1,16 +1,20 @@
-import { useState } from "react"
-import { z } from "zod"
-import { toast } from "sonner"
-import { Check, Loader2, X } from "lucide-react"
-import { useAprobarRemito, useRechazarRemito } from "./use-vendimia"
-import type { Remito } from "@/api/schemas/vendimia"
-import { useAuth } from "@/context/auth-context"
-import { puede } from "@/auth/permisos"
-import { DialogoConfirmacion } from "@/components/datos/dialogo-confirmacion"
-import { useFormularioApi } from "@/components/formulario/use-formulario-api"
-import { ErrorDelServidor } from "@/components/formulario/error-del-servidor"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { Ban, Check, Loader2, X } from "lucide-react";
+import {
+  useAnularRemito,
+  useAprobarRemito,
+  useRechazarRemito,
+} from "./use-vendimia";
+import type { Remito } from "@/api/schemas/vendimia";
+import { useAuth } from "@/context/auth-context";
+import { puede } from "@/auth/permisos";
+import { DialogoConfirmacion } from "@/components/datos/dialogo-confirmacion";
+import { useFormularioApi } from "@/components/formulario/use-formulario-api";
+import { ErrorDelServidor } from "@/components/formulario/error-del-servidor";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -28,7 +32,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 
 /**
  * `@Length(10, 500)`: el motivo llega al Capataz como **única** explicación del
@@ -39,13 +43,16 @@ const rechazoSchema = z.object({
   motivoRechazo: z
     .string()
     .trim()
-    .min(10, "Explicá el motivo con al menos 10 caracteres: es lo único que ve el Capataz")
+    .min(
+      10,
+      "Explicá el motivo con al menos 10 caracteres: es lo único que ve el Capataz",
+    )
     .max(500, "Máximo 500 caracteres"),
-})
+});
 
 function RechazarDialog({ remito }: { remito: Remito }) {
-  const [abierto, setAbierto] = useState(false)
-  const rechazar = useRechazarRemito()
+  const [abierto, setAbierto] = useState(false);
+  const rechazar = useRechazarRemito();
 
   const form = useFormularioApi({
     schema: rechazoSchema,
@@ -53,10 +60,13 @@ function RechazarDialog({ remito }: { remito: Remito }) {
     exito: `${remito.numeroRemito} quedó rechazado`,
     error: "No se pudo rechazar el remito",
     onSubmit: async (valores) => {
-      await rechazar.mutateAsync({ id: remito.id, motivo: valores.motivoRechazo })
+      await rechazar.mutateAsync({
+        id: remito.id,
+        motivo: valores.motivoRechazo,
+      });
     },
     onExito: () => setAbierto(false),
-  })
+  });
 
   return (
     <Dialog open={abierto} onOpenChange={setAbierto}>
@@ -64,7 +74,11 @@ function RechazarDialog({ remito }: { remito: Remito }) {
         {/* Etiqueta explícita y no un sufijo `sr-only`: el botón se repite
             por fila, y el texto oculto además duplicaba el número de remito en
             el árbol accesible. */}
-        <Button variant="outline" size="sm" aria-label={`Rechazar ${remito.numeroRemito}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label={`Rechazar ${remito.numeroRemito}`}
+        >
           <X className="size-4" aria-hidden="true" />
           Rechazar
         </Button>
@@ -73,12 +87,17 @@ function RechazarDialog({ remito }: { remito: Remito }) {
         <DialogHeader>
           <DialogTitle>Rechazar {remito.numeroRemito}</DialogTitle>
           <DialogDescription>
-            Los pesajes del remito quedan <strong>observados</strong>, no vuelven a la cola:
-            hay que corregirlos o anularlos antes de que entren en otro remito.
+            Los pesajes del remito quedan <strong>observados</strong>, no
+            vuelven a la cola: hay que corregirlos o anularlos antes de que
+            entren en otro remito.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={(e) => void form.enviar(e)} className="space-y-4" noValidate>
+          <form
+            onSubmit={(e) => void form.enviar(e)}
+            className="space-y-4"
+            noValidate
+          >
             <FormField
               control={form.control}
               name="motivoRechazo"
@@ -99,8 +118,14 @@ function RechazarDialog({ remito }: { remito: Remito }) {
             />
             <ErrorDelServidor form={form} />
             <DialogFooter>
-              <Button type="submit" variant="destructive" disabled={form.enviando}>
-                {form.enviando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={form.enviando}
+              >
+                {form.enviando && (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                )}
                 Rechazar remito
               </Button>
             </DialogFooter>
@@ -108,16 +133,118 @@ function RechazarDialog({ remito }: { remito: Remito }) {
         </Form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-/** Aprobar y rechazar. Solo aparecen sobre un borrador y para quien puede. */
+/** Igual que el rechazo: el motivo es lo único que queda para entender el porqué. */
+const anulacionSchema = z.object({
+  motivoAnulacion: z
+    .string()
+    .trim()
+    .min(10, "Explicá el motivo con al menos 10 caracteres: queda registrado")
+    .max(500, "Máximo 500 caracteres"),
+});
+
+function AnularDialog({ remito }: { remito: Remito }) {
+  const [abierto, setAbierto] = useState(false);
+  const anular = useAnularRemito();
+
+  const form = useFormularioApi({
+    schema: anulacionSchema,
+    defaultValues: { motivoAnulacion: "" },
+    exito: `${remito.numeroRemito} quedó anulado`,
+    error: "No se pudo anular el remito",
+    onSubmit: async (valores) => {
+      await anular.mutateAsync({
+        id: remito.id,
+        motivo: valores.motivoAnulacion,
+      });
+    },
+    onExito: () => setAbierto(false),
+  });
+
+  return (
+    <Dialog open={abierto} onOpenChange={setAbierto}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label={`Anular ${remito.numeroRemito}`}
+        >
+          <Ban className="size-4" aria-hidden="true" />
+          Anular
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Anular {remito.numeroRemito}</DialogTitle>
+          <DialogDescription>
+            Es para un remito que se aprobó <strong>por error</strong>. Los
+            pesajes vuelven a la cola de remitos y el cuartel vuelve a estar en
+            cosecha. No se puede anular si la bodega ya tiene la liquidación
+            cargada. Queda registrado quién lo anuló y por qué.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={(e) => void form.enviar(e)}
+            className="space-y-4"
+            noValidate
+          >
+            <FormField
+              control={form.control}
+              name="motivoAnulacion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Motivo de la anulación</FormLabel>
+                  <FormControl>
+                    <Textarea rows={4} {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Obligatorio y queda en el registro de auditoría.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <ErrorDelServidor form={form} />
+            <DialogFooter>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={form.enviando}
+              >
+                {form.enviando && (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                )}
+                Anular remito
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Aprobar y rechazar un borrador; anular uno aprobado. Cada acción aparece solo
+ * para quien puede: anular es exclusivo del Propietario, porque es dinero.
+ */
 export function AccionesRemito({ remito }: { remito: Remito }) {
-  const { user } = useAuth()
-  const aprobar = useAprobarRemito()
+  const { user } = useAuth();
+  const aprobar = useAprobarRemito();
+
+  if (remito.estado === "aprobado" && user?.rol === "Propietario") {
+    return (
+      <div className="flex items-center justify-end gap-2">
+        <AnularDialog remito={remito} />
+      </div>
+    );
+  }
 
   if (remito.estado !== "borrador" || !puede(user, "vendimiaAprobacion")) {
-    return null
+    return null;
   }
 
   return (
@@ -129,8 +256,8 @@ export function AccionesRemito({ remito }: { remito: Remito }) {
         tono="confirmacion"
         errorPorDefecto="No se pudo aprobar el remito"
         onConfirmar={async () => {
-          await aprobar.mutateAsync(remito.id)
-          toast.success(`${remito.numeroRemito} quedó aprobado`)
+          await aprobar.mutateAsync(remito.id);
+          toast.success(`${remito.numeroRemito} quedó aprobado`);
         }}
       >
         <Button size="sm" aria-label={`Aprobar ${remito.numeroRemito}`}>
@@ -141,5 +268,5 @@ export function AccionesRemito({ remito }: { remito: Remito }) {
 
       <RechazarDialog remito={remito} />
     </div>
-  )
+  );
 }

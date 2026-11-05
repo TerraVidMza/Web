@@ -62,6 +62,14 @@ export function useActualizarSensor() {
   })
 }
 
+export function useActivarSensor() {
+  const invalidar = useInvalidarSensores()
+  return useMutation({
+    mutationFn: (id: string) => api.activarSensor(id),
+    onSuccess: invalidar,
+  })
+}
+
 export function useDesactivarSensor() {
   const invalidar = useInvalidarSensores()
   return useMutation({

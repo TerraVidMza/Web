@@ -55,6 +55,14 @@ export function useActualizarCatalogoCosteable(config: CatalogoCosteableConfig) 
   })
 }
 
+export function useActivarCatalogoCosteable(config: CatalogoCosteableConfig) {
+  const invalidar = useInvalidar(config)
+  return useMutation({
+    mutationFn: (id: string) => config.activar(id),
+    onSuccess: invalidar,
+  })
+}
+
 export function useDesactivarCatalogoCosteable(config: CatalogoCosteableConfig) {
   const invalidar = useInvalidar(config)
   return useMutation({

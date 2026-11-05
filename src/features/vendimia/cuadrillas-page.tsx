@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react"
 import { z } from "zod"
 import { toast } from "sonner"
-import { DollarSign, Info, Loader2, MoreHorizontal, Pencil, Plus, Power } from "lucide-react"
+import {
+  DollarSign,
+  Info,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Power,
+  RotateCcw,
+} from "lucide-react"
 import {
   useActualizarCuadrilla,
   useCrearCuadrilla,
   useCuadrillas,
+  useActivarCuadrilla,
   useDesactivarCuadrilla,
   useFijarTarifa,
   useTarifas,
@@ -355,6 +365,7 @@ export function CuadrillasPage() {
   const fincas = useFincas()
   const consulta = useCuadrillas(fincaId)
   const desactivar = useDesactivarCuadrilla()
+  const activar = useActivarCuadrilla()
   const { user } = useAuth()
 
   const puedeCrear = puede(user, "cuadrillas")
@@ -493,6 +504,24 @@ export function CuadrillasPage() {
                                     >
                                       <Power className="size-4" aria-hidden="true" />
                                       Dar de baja
+                                    </DropdownMenuItem>
+                                  </DialogoConfirmacion>
+                                )}
+                                {puedeDarDeBaja && !cuadrilla.activa && (
+                                  <DialogoConfirmacion
+                                    titulo={`¿Reactivar ${cuadrilla.nombre}?`}
+                                    descripcion="Vuelve a ofrecerse al registrar pesajes. Si ya hay otra activa con el mismo nombre en la finca, no se puede."
+                                    textoConfirmar="Reactivar"
+                                    tono="confirmacion"
+                                    errorPorDefecto="No se pudo reactivar la cuadrilla"
+                                    onConfirmar={async () => {
+                                      await activar.mutateAsync(cuadrilla.id)
+                                      toast.success(`${cuadrilla.nombre} está activa de nuevo`)
+                                    }}
+                                  >
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                      <RotateCcw className="size-4" aria-hidden="true" />
+                                      Reactivar
                                     </DropdownMenuItem>
                                   </DialogoConfirmacion>
                                 )}

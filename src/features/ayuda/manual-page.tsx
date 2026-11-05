@@ -1,24 +1,72 @@
-import { useMemo, useState } from "react"
-import { Accordion as AccordionPrimitive } from "radix-ui"
-import { BookOpen, ChevronDown, HelpCircle, Search } from "lucide-react"
-import { useArticulos, useManual } from "./use-ayuda"
-import { ContenidoMarkdown } from "./manual/contenido-markdown"
-import { normalizarBusqueda, textoBuscable } from "./manual/manuales"
-import { ETIQUETA_MODULO, type Articulo, type ModuloAyuda } from "@/api/schemas/ayuda"
-import { useAuth } from "@/context/auth-context"
-import { puede } from "@/auth/permisos"
-import { EstadoConsulta } from "@/components/datos/estado-consulta"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useEffect, useMemo, useState } from "react";
+import { Accordion as AccordionPrimitive } from "radix-ui";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  HelpCircle,
+  Search,
+} from "lucide-react";
+import { useArticulos, useManual } from "./use-ayuda";
+import { ContenidoMarkdown } from "./manual/contenido-markdown";
+import { normalizarBusqueda, textoBuscable } from "./manual/manuales";
+import {
+  ETIQUETA_MODULO,
+  type Articulo,
+  type ModuloAyuda,
+} from "@/api/schemas/ayuda";
+import { useAuth } from "@/context/auth-context";
+import { puede } from "@/auth/permisos";
+import { EstadoConsulta } from "@/components/datos/estado-consulta";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 /** Un artículo editado hace menos de esto lleva la marca «Actualizado» (HU-36). */
-const DIAS_RECIENTE = 30
+const DIAS_RECIENTE = 30;
 
 function esReciente(articulo: Articulo, ahora = Date.now()): boolean {
-  const fecha = articulo.updatedAt ?? articulo.createdAt
-  return ahora - new Date(fecha).getTime() < DIAS_RECIENTE * 24 * 60 * 60 * 1000
+  const fecha = articulo.updatedAt ?? articulo.createdAt;
+  return (
+    ahora - new Date(fecha).getTime() < DIAS_RECIENTE * 24 * 60 * 60 * 1000
+  );
+}
+
+/**
+ * Secciones abiertas del manual, recordadas por rol en este navegador: quien
+ * vuelve encuentra el manual como lo dejó. Es una comodidad, no un dato: si el
+ * almacenamiento no está disponible, arranca con la primera sección abierta.
+ */
+function useSeccionesAbiertas(
+  rol: string | undefined,
+  primera: string | undefined,
+) {
+  const clave = `terravid.manual.abiertas.${rol ?? "sin-rol"}`;
+  const [abiertas, setAbiertas] = useState<string[] | null>(() => {
+    try {
+      const guardado = window.localStorage.getItem(clave);
+      return guardado ? (JSON.parse(guardado) as string[]) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Sin nada guardado, abre la primera para que la pantalla no arranque vacía.
+  const efectivas = abiertas ?? (primera ? [primera] : []);
+
+  useEffect(() => {
+    if (abiertas === null) return;
+    try {
+      window.localStorage.setItem(clave, JSON.stringify(abiertas));
+    } catch {
+      // Sin almacenamiento el manual funciona igual, solo que no recuerda.
+    }
+  }, [abiertas, clave]);
+
+  return [efectivas, setAbiertas] as const;
 }
 
 /**
@@ -30,44 +78,92 @@ function esReciente(articulo: Articulo, ahora = Date.now()): boolean {
  * y deja solo las secciones que mencionan lo buscado.
  */
 export function ManualPage() {
-  const { user } = useAuth()
-  const consulta = useManual(user?.rol)
-  const [busqueda, setBusqueda] = useState("")
+  const { user } = useAuth();
+  const consulta = useManual(user?.rol);
+  const [busqueda, setBusqueda] = useState("");
+  const [abiertas, setAbiertas] = useSeccionesAbiertas(
+    user?.rol,
+    consulta.data?.secciones[0]?.id,
+  );
 
   const secciones = useMemo(() => {
-    const todas = consulta.data?.secciones ?? []
-    const texto = normalizarBusqueda(busqueda)
-    if (!texto) return todas
-    return todas.filter((s) => textoBuscable(s).includes(texto))
-  }, [consulta.data, busqueda])
+    const todas = consulta.data?.secciones ?? [];
+    const texto = normalizarBusqueda(busqueda);
+    if (!texto) return todas;
+    return todas.filter((s) => textoBuscable(s).includes(texto));
+  }, [consulta.data, busqueda]);
+
+  const alternar = (id: string) =>
+    setAbiertas(
+      abiertas.includes(id)
+        ? abiertas.filter((a) => a !== id)
+        : [...abiertas, id],
+    );
+
+  /**
+   * Ir a una entrada del índice: si su sección está plegada se abre primero, y
+   * recién entonces se baja, porque el destino no existe mientras está cerrada.
+   */
+  function irA(idSeccion: string, destino: string) {
+    if (!abiertas.includes(idSeccion)) setAbiertas([...abiertas, idSeccion]);
+    requestAnimationFrame(() =>
+      document
+        .getElementById(destino)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  }
+
+  // Buscando, todo lo que coincide se muestra abierto: si no, el resultado quedaría plegado.
+  const estaAbierta = (id: string) =>
+    busqueda.length > 0 || abiertas.includes(id);
+
+  const todasAbiertas =
+    secciones.length > 0 && secciones.every((s) => abiertas.includes(s.id));
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">{consulta.data?.titulo ?? "Manual de usuario"}</h2>
+          <h2 className="text-lg font-semibold">
+            {consulta.data?.titulo ?? "Manual de usuario"}
+          </h2>
           {consulta.data?.version && (
             <p className="text-xs text-muted-foreground">
               Versión del manual: {consulta.data.version}
             </p>
           )}
         </div>
-        <div className="w-full space-y-1.5 sm:w-72">
-          <Label htmlFor="ayuda-buscar">Buscar en el manual</Label>
-          <div className="relative">
-            <Search
-              className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              id="ayuda-buscar"
-              type="search"
-              className="pl-8"
-              placeholder="Palabra clave..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
+        <div className="flex w-full items-end gap-2 sm:w-auto">
+          <div className="w-full space-y-1.5 sm:w-72">
+            <Label htmlFor="ayuda-buscar">Buscar en el manual</Label>
+            <div className="relative">
+              <Search
+                className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                id="ayuda-buscar"
+                type="search"
+                className="pl-8"
+                placeholder="Palabra clave..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+            </div>
           </div>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setAbiertas(todasAbiertas ? [] : secciones.map((s) => s.id))
+            }
+          >
+            {todasAbiertas ? (
+              <ChevronsDownUp className="size-4" aria-hidden="true" />
+            ) : (
+              <ChevronsUpDown className="size-4" aria-hidden="true" />
+            )}
+            {todasAbiertas ? "Contraer todo" : "Expandir todo"}
+          </Button>
         </div>
       </div>
 
@@ -81,11 +177,15 @@ export function ManualPage() {
         }}
         vacioPorFiltro={{
           titulo: "Ninguna sección menciona eso",
-          descripcion: "Probá con otra palabra, por ejemplo «remito», «sensor» o «contraseña».",
+          descripcion:
+            "Probá con otra palabra, por ejemplo «remito», «sensor» o «contraseña».",
         }}
       >
         <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
-          <nav aria-label="Índice del manual" className="lg:sticky lg:top-4 lg:self-start">
+          <nav
+            aria-label="Índice del manual"
+            className="lg:sticky lg:top-2 lg:self-start"
+          >
             <Card>
               <CardContent className="p-3">
                 <ol className="space-y-1 text-sm">
@@ -93,24 +193,33 @@ export function ManualPage() {
                     <li key={seccion.id}>
                       <a
                         href={`#${seccion.id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          irA(seccion.id, seccion.id);
+                        }}
                         className="block rounded px-2 py-1 font-medium hover:bg-accent"
                       >
                         {seccion.titulo}
                       </a>
-                      {seccion.subtitulos.length > 0 && (
-                        <ol className="mt-0.5 mb-1 space-y-0.5 border-l pl-2 ml-3">
-                          {seccion.subtitulos.map((sub) => (
-                            <li key={sub.id}>
-                              <a
-                                href={`#${sub.id}`}
-                                className="block rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-                              >
-                                {sub.titulo}
-                              </a>
-                            </li>
-                          ))}
-                        </ol>
-                      )}
+                      {seccion.subtitulos.length > 0 &&
+                        estaAbierta(seccion.id) && (
+                          <ol className="mt-0.5 mb-1 space-y-0.5 border-l pl-2 ml-3">
+                            {seccion.subtitulos.map((sub) => (
+                              <li key={sub.id}>
+                                <a
+                                  href={`#${sub.id}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    irA(seccion.id, sub.id);
+                                  }}
+                                  className="block rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                                >
+                                  {sub.titulo}
+                                </a>
+                              </li>
+                            ))}
+                          </ol>
+                        )}
                     </li>
                   ))}
                 </ol>
@@ -119,25 +228,52 @@ export function ManualPage() {
           </nav>
 
           <div className="min-w-0 space-y-4">
-            {secciones.map((seccion) => (
-              <Card key={seccion.id} id={seccion.id} className="scroll-mt-4">
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    <h2>{seccion.titulo}</h2>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="-mt-4">
-                  <ContenidoMarkdown markdown={seccion.cuerpo} />
-                </CardContent>
-              </Card>
-            ))}
+            {secciones.map((seccion) => {
+              const abierta = estaAbierta(seccion.id);
+              return (
+                <Card
+                  key={seccion.id}
+                  id={seccion.id}
+                  className={
+                    abierta
+                      ? "scroll-mt-4 gap-3 py-4"
+                      : "scroll-mt-4 gap-0 py-3"
+                  }
+                >
+                  <CardHeader>
+                    <CardTitle className="text-sm">
+                      <h2>
+                        <button
+                          type="button"
+                          onClick={() => alternar(seccion.id)}
+                          aria-expanded={abierta}
+                          aria-controls={`cuerpo-${seccion.id}`}
+                          className="flex w-full items-center justify-between gap-3 text-left text-sm font-semibold"
+                        >
+                          {seccion.titulo}
+                          <ChevronDown
+                            className={`size-4 shrink-0 text-muted-foreground transition-transform ${abierta ? "rotate-180" : ""}`}
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </h2>
+                    </CardTitle>
+                  </CardHeader>
+                  {abierta && (
+                    <CardContent id={`cuerpo-${seccion.id}`} className="-mt-4">
+                      <ContenidoMarkdown markdown={seccion.cuerpo} />
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         </div>
       </EstadoConsulta>
 
       {puede(user, "ayuda") && <ArticulosDeLaEmpresa busqueda={busqueda} />}
     </div>
-  )
+  );
 }
 
 /**
@@ -145,23 +281,23 @@ export function ManualPage() {
  * si no hay ninguna, la sección no se muestra.
  */
 function ArticulosDeLaEmpresa({ busqueda }: { busqueda: string }) {
-  const consulta = useArticulos({})
+  const consulta = useArticulos({});
 
   const articulos = useMemo(() => {
-    const texto = normalizarBusqueda(busqueda)
-    const todos = consulta.data ?? []
-    if (!texto) return todos
+    const texto = normalizarBusqueda(busqueda);
+    const todos = consulta.data ?? [];
+    if (!texto) return todos;
     return todos.filter((a) =>
-      normalizarBusqueda(`${a.titulo} ${a.contenido}`).includes(texto)
-    )
-  }, [consulta.data, busqueda])
+      normalizarBusqueda(`${a.titulo} ${a.contenido}`).includes(texto),
+    );
+  }, [consulta.data, busqueda]);
 
-  if (!articulos.length) return null
+  if (!articulos.length) return null;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
+        <CardTitle className="text-sm">
           <h2>Más preguntas frecuentes</h2>
         </CardTitle>
       </CardHeader>
@@ -185,10 +321,13 @@ function ArticulosDeLaEmpresa({ busqueda }: { busqueda: string }) {
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       {articulo.titulo}
-                      {esReciente(articulo) && <Badge variant="secondary">Actualizado</Badge>}
+                      {esReciente(articulo) && (
+                        <Badge variant="secondary">Actualizado</Badge>
+                      )}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {ETIQUETA_MODULO[articulo.modulo as ModuloAyuda] ?? articulo.modulo}
+                      {ETIQUETA_MODULO[articulo.modulo as ModuloAyuda] ??
+                        articulo.modulo}
                     </span>
                   </span>
                   <ChevronDown
@@ -207,5 +346,5 @@ function ArticulosDeLaEmpresa({ busqueda }: { busqueda: string }) {
         </AccordionPrimitive.Root>
       </CardContent>
     </Card>
-  )
+  );
 }

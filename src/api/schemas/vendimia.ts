@@ -5,11 +5,11 @@ import { estadoCuartelSchema } from "./cuartel"
 /**
  * Estado del remito (HU-27).
  *
- *   borrador ──aprobar──► aprobado
+ *   borrador ──aprobar──► aprobado ──anular──► anulado
  *      │
  *      └──rechazar──► rechazado
  */
-export const estadoRemitoSchema = z.enum(["borrador", "aprobado", "rechazado"])
+export const estadoRemitoSchema = z.enum(["borrador", "aprobado", "rechazado", "anulado"])
 
 export type EstadoRemito = z.infer<typeof estadoRemitoSchema>
 
@@ -108,6 +108,8 @@ export const remitoSchema = z.object({
   generadoPorId: uuid,
   aprobadoPorId: opcional(uuid),
   rechazadoPorId: opcional(uuid),
+  anuladoPorId: opcional(uuid),
+  motivoAnulacion: opcional(z.string()),
   estado: estadoRemitoSchema,
   totalKg: opcional(decimal),
   totalLiquidacion: opcional(decimal),

@@ -79,6 +79,15 @@ export function useAprobarRemito() {
   })
 }
 
+export function useAnularRemito() {
+  const invalidar = useInvalidarCircuito()
+  return useMutation({
+    mutationFn: ({ id, motivo }: { id: string; motivo: string }) =>
+      api.anularRemito(id, motivo),
+    onSuccess: invalidar,
+  })
+}
+
 export function useRechazarRemito() {
   const invalidar = useInvalidarCircuito()
   return useMutation({
@@ -166,6 +175,14 @@ export function useActualizarCuadrilla() {
   })
 }
 
+export function useActivarCuadrilla() {
+  const invalidar = useInvalidarCuadrillas()
+  return useMutation({
+    mutationFn: (id: string) => api.activarCuadrilla(id),
+    onSuccess: invalidar,
+  })
+}
+
 export function useDesactivarCuadrilla() {
   const invalidar = useInvalidarCuadrillas()
   return useMutation({
@@ -187,6 +204,22 @@ export function useFijarTarifa() {
   const invalidar = useInvalidarCuadrillas()
   return useMutation({
     mutationFn: ({ id, ...input }: TarifaInput & { id: string }) => api.fijarTarifa(id, input),
+    onSuccess: invalidar,
+  })
+}
+
+/** Corregir un pesaje observado lo devuelve al circuito: mueve remitos, cosecha y costeo. */
+export function useCorregirPesaje() {
+  const invalidar = useInvalidarCircuito()
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...input
+    }: {
+      id: string
+      kgTotales?: number
+      fecha?: string
+    }) => api.corregirPesaje(id, input),
     onSuccess: invalidar,
   })
 }

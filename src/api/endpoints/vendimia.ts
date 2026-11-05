@@ -5,6 +5,7 @@ import {
   estadoCosechaFincaSchema,
   liquidacionONuloSchema,
   liquidacionSchema,
+  pesajeSchema,
   pesajesPaginadosSchema,
   remitoDetalleSchema,
   remitoSchema,
@@ -54,6 +55,15 @@ export function aprobarRemito(id: string) {
 /** El motivo llega al Capataz como única explicación: mínimo 10 caracteres. */
 export function rechazarRemito(id: string, motivoRechazo: string) {
   return crear(`/remitos/${id}/rechazar`, { motivoRechazo }, remitoSchema)
+}
+
+/**
+ * Anula un remito **aprobado** por error. Solo el Propietario, con motivo de al
+ * menos 10 caracteres, y solo si la bodega todavía no tiene la liquidación
+ * cargada: si la tiene, el backend responde 409.
+ */
+export function anularRemito(id: string, motivoAnulacion: string) {
+  return crear(`/remitos/${id}/anular`, { motivoAnulacion }, remitoSchema)
 }
 
 export interface LiquidacionInput {
@@ -124,6 +134,10 @@ export function actualizarCuadrilla(id: string, input: ActualizarCuadrillaInput)
   return modificar(`/cuadrillas/${id}`, input, cuadrillaSchema)
 }
 
+export function activarCuadrilla(id: string) {
+  return modificar(`/cuadrillas/${id}/activar`, undefined, cuadrillaSchema)
+}
+
 export function desactivarCuadrilla(id: string) {
   return modificar(`/cuadrillas/${id}/desactivar`, undefined, cuadrillaSchema)
 }
@@ -134,4 +148,16 @@ export function tarifasDeCuadrilla(id: string) {
 
 export function fijarTarifa(id: string, input: TarifaInput) {
   return crear(`/cuadrillas/${id}/tarifas`, input, tarifaCuadrillaSchema)
+}
+
+/**
+ * Corrige un pesaje `observado` (el remito que lo contenía fue rechazado) y lo
+ * devuelve al circuito. El backend rechaza (400) cualquier otro estado y
+ * recalcula la tarifa y el monto con los datos nuevos.
+ */
+export function corregirPesaje(
+  id: string,
+  input: { kgTotales?: number; fecha?: string; cuadrillaId?: string }
+) {
+  return modificar(`/pesajes-vendimia/${id}`, input, pesajeSchema)
 }

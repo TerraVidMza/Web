@@ -1,8 +1,10 @@
 import { useMemo } from "react"
-import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from "react-leaflet"
+import { CircleMarker, MapContainer, Polygon, Popup, TileLayer, Tooltip } from "react-leaflet"
 import { Link } from "react-router-dom"
 import "leaflet/dist/leaflet.css"
 import type { EstadoCuartel } from "@/api/schemas/cuartel"
+import type { PoligonoGeoJson } from "@/api/schemas/geo"
+import { aPosicionesLeaflet } from "@/lib/geo"
 import { etiquetaEstado } from "@/lib/estados"
 import { useFormato } from "@/context/configuracion-context"
 
@@ -14,6 +16,8 @@ export interface PuntoMapa {
   tipo: "finca" | "cuartel"
   estado?: EstadoCuartel
   hectareas: number | null
+  /** Contorno (D-037). Si está, se dibuja la superficie en vez del punto. */
+  poligono?: PoligonoGeoJson | null
   fincaNombre?: string
   fincaId?: string
 }
@@ -60,8 +64,14 @@ export function MapaFincas({ puntos }: { puntos: PuntoMapa[] }) {
   // los marcadores fuera de pantalla en cualquier finca que no sea de Mendoza.
   const limites = useMemo<[[number, number], [number, number]] | null>(() => {
     if (puntos.length === 0) return null
-    const lats = puntos.map((p) => p.latitud)
-    const lngs = puntos.map((p) => p.longitud)
+    // Los vértices de los contornos cuentan tanto como los puntos: una finca
+    // grande tiene que entrar entera en el encuadre.
+    const vertices = puntos.flatMap((p) => [
+      [p.latitud, p.longitud],
+      ...(p.poligono ? p.poligono.coordinates.flat().map(([lng, lat]) => [lat, lng]) : []),
+    ])
+    const lats = vertices.map(([lat]) => lat)
+    const lngs = vertices.map(([, lng]) => lng)
     return [
       [Math.min(...lats), Math.min(...lngs)],
       [Math.max(...lats), Math.max(...lngs)],
@@ -84,44 +94,61 @@ export function MapaFincas({ puntos }: { puntos: PuntoMapa[] }) {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {puntos.map((punto) => (
-            <CircleMarker
-              key={`${punto.tipo}-${punto.id}`}
-              center={[punto.latitud, punto.longitud]}
-              radius={punto.tipo === "finca" ? 10 : 7}
-              pathOptions={{
-                color: "#ffffff",
-                weight: 2,
-                fillColor: colorDe(punto),
-                fillOpacity: 0.9,
-              }}
-            >
-              {/* El tooltip lleva el estado escrito: el color del marcador no
-                  puede ser la única forma de saber en qué situación está. */}
-              <Tooltip direction="top">
-                {punto.nombre}
-                {punto.estado && ` — ${etiquetaEstado(punto.estado)}`}
-              </Tooltip>
-              <Popup>
-                <div className="space-y-1 text-sm">
-                  <p className="font-medium">{punto.nombre}</p>
-                  {punto.fincaNombre && (
-                    <p className="text-muted-foreground">{punto.fincaNombre}</p>
-                  )}
-                  {punto.estado && <p>{etiquetaEstado(punto.estado)}</p>}
-                  <p>{formato.hectareas(punto.hectareas)}</p>
-                  {punto.tipo === "cuartel" && punto.fincaId && (
-                    <Link
-                      to={`/fincas/${punto.fincaId}/cuarteles`}
-                      className="text-primary underline"
-                    >
-                      Ver cuarteles de la finca
-                    </Link>
-                  )}
-                </div>
-              </Popup>
-            </CircleMarker>
-          ))}
+          {puntos.map((punto) => {
+            // El tooltip lleva el estado escrito: el color no puede ser la
+            // única forma de saber en qué situación está.
+            const detalle = (
+              <>
+                <Tooltip direction="top" sticky>
+                  {punto.nombre}
+                  {punto.estado && ` — ${etiquetaEstado(punto.estado)}`}
+                </Tooltip>
+                <Popup>
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">{punto.nombre}</p>
+                    {punto.fincaNombre && (
+                      <p className="text-muted-foreground">{punto.fincaNombre}</p>
+                    )}
+                    {punto.estado && <p>{etiquetaEstado(punto.estado)}</p>}
+                    <p>{formato.hectareas(punto.hectareas)}</p>
+                    {punto.tipo === "cuartel" && punto.fincaId && (
+                      <Link
+                        to={`/fincas/${punto.fincaId}/cuarteles`}
+                        className="text-primary underline"
+                      >
+                        Ver cuarteles de la finca
+                      </Link>
+                    )}
+                  </div>
+                </Popup>
+              </>
+            )
+
+            // Con contorno (D-037) se dibuja la superficie real; sin él, el punto.
+            return punto.poligono ? (
+              <Polygon
+                key={`${punto.tipo}-${punto.id}`}
+                positions={aPosicionesLeaflet(punto.poligono)}
+                pathOptions={{ color: colorDe(punto), weight: 2, fillOpacity: 0.3 }}
+              >
+                {detalle}
+              </Polygon>
+            ) : (
+              <CircleMarker
+                key={`${punto.tipo}-${punto.id}`}
+                center={[punto.latitud, punto.longitud]}
+                radius={punto.tipo === "finca" ? 10 : 7}
+                pathOptions={{
+                  color: "#ffffff",
+                  weight: 2,
+                  fillColor: colorDe(punto),
+                  fillOpacity: 0.9,
+                }}
+              >
+                {detalle}
+              </CircleMarker>
+            )
+          })}
         </MapContainer>
       </div>
 
