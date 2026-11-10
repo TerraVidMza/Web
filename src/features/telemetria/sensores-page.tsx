@@ -1,8 +1,17 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { Info, LineChart, MoreHorizontal, Pencil, Plus, Power, KeyRound } from "lucide-react"
-import { useDesactivarSensor, useSensores } from "./use-telemetria"
+import {
+  Info,
+  LineChart,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Power,
+  KeyRound,
+  RotateCcw,
+} from "lucide-react"
+import { useActivarSensor, useDesactivarSensor, useSensores } from "./use-telemetria"
 import { SensorDialog } from "./sensor-dialog"
 import { CredencialMqttDialog } from "./credencial-mqtt-dialog"
 import { useFincas } from "@/features/fincas/use-fincas"
@@ -49,6 +58,7 @@ export function SensoresPage() {
   const fincas = useFincas()
   const consulta = useSensores(fincaId)
   const desactivar = useDesactivarSensor()
+  const activar = useActivarSensor()
   const formato = useFormato()
 
   const sensores = consulta.data ?? []
@@ -211,6 +221,25 @@ export function SensoresPage() {
                                   >
                                     <Power className="size-4" aria-hidden="true" />
                                     Dar de baja
+                                  </DropdownMenuItem>
+                                </DialogoConfirmacion>
+                              )}
+
+                              {!sensor.activo && (
+                                <DialogoConfirmacion
+                                  titulo={`¿Reactivar ${sensor.codigo}?`}
+                                  descripcion="El nodo vuelve a poder conectarse con la credencial que ya tenía y a mandar lecturas."
+                                  textoConfirmar="Reactivar"
+                                  tono="confirmacion"
+                                  errorPorDefecto="No se pudo reactivar el sensor"
+                                  onConfirmar={async () => {
+                                    await activar.mutateAsync(sensor.id)
+                                    toast.success(`${sensor.codigo} está activo de nuevo`)
+                                  }}
+                                >
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <RotateCcw className="size-4" aria-hidden="true" />
+                                    Reactivar
                                   </DropdownMenuItem>
                                 </DialogoConfirmacion>
                               )}

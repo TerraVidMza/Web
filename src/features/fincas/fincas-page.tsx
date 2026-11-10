@@ -1,16 +1,16 @@
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { MapPinned, Plus, Search } from "lucide-react"
-import { useFincas } from "./use-fincas"
-import { FincaDialog } from "./finca-dialog"
-import { AccionesFinca } from "./acciones-finca"
-import { useAuth } from "@/context/auth-context"
-import { useFormato } from "@/context/configuracion-context"
-import { puede } from "@/auth/permisos"
-import { EstadoConsulta } from "@/components/datos/estado-consulta"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { MapPinned, Plus, Search } from "lucide-react";
+import { useFincas } from "./use-fincas";
+import { FincaDialog } from "./finca-dialog";
+import { AccionesFinca } from "./acciones-finca";
+import { useAuth } from "@/context/auth-context";
+import { useFormato } from "@/context/configuracion-context";
+import { puede } from "@/auth/permisos";
+import { EstadoConsulta } from "@/components/datos/estado-consulta";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -19,19 +19,20 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
 /** `ListarFincasDto.search` es `@Length(1, 100)`: más largo es un 400. */
-const LARGO_MAXIMO_BUSQUEDA = 100
+const LARGO_MAXIMO_BUSQUEDA = 100;
 
 export function FincasPage() {
-  const [busqueda, setBusqueda] = useState("")
-  const consulta = useFincas(busqueda || undefined)
-  const { user } = useAuth()
-  const formato = useFormato()
+  const [busqueda, setBusqueda] = useState("");
+  const [verBajas, setVerBajas] = useState(false);
+  const consulta = useFincas(busqueda || undefined, verBajas);
+  const { user } = useAuth();
+  const formato = useFormato();
 
-  const fincas = consulta.data ?? []
-  const puedeEscribir = puede(user, "fincasEscritura")
+  const fincas = consulta.data ?? [];
+  const puedeEscribir = puede(user, "fincasEscritura");
 
   return (
     <div className="space-y-6">
@@ -39,7 +40,9 @@ export function FincasPage() {
         <div>
           <h1 className="text-xl font-semibold">Fincas</h1>
           <p className="text-sm text-muted-foreground">
-            Las fincas activas de tu empresa.{" "}
+            {verBajas
+              ? "Las fincas dadas de baja de tu empresa."
+              : "Las fincas activas de tu empresa."}{" "}
             <Link to="/cuarteles" className="text-primary hover:underline">
               Buscar cuarteles en todas
             </Link>
@@ -56,20 +59,29 @@ export function FincasPage() {
         )}
       </div>
 
-      <div className="relative max-w-sm">
-        <Search
-          className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <Input
-          type="search"
-          aria-label="Buscar finca por nombre"
-          placeholder="Buscar finca..."
-          className="pl-8"
-          maxLength={LARGO_MAXIMO_BUSQUEDA}
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search
+            className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            type="search"
+            aria-label="Buscar finca por nombre"
+            placeholder="Buscar finca..."
+            className="pl-8"
+            maxLength={LARGO_MAXIMO_BUSQUEDA}
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+        </div>
+        <Button
+          variant={verBajas ? "secondary" : "outline"}
+          aria-pressed={verBajas}
+          onClick={() => setVerBajas((v) => !v)}
+        >
+          {verBajas ? "Ver activas" : "Ver dadas de baja"}
+        </Button>
       </div>
 
       <Card>
@@ -91,7 +103,8 @@ export function FincasPage() {
           >
             <Table>
               <TableCaption className="sr-only">
-                Fincas activas de la empresa con su superficie y cantidad de cuarteles
+                {verBajas ? "Fincas dadas de baja" : "Fincas activas"} de la
+                empresa con su superficie y cantidad de cuarteles
               </TableCaption>
               <TableHeader>
                 <TableRow>
@@ -107,7 +120,9 @@ export function FincasPage() {
               <TableBody>
                 {fincas.map((finca) => (
                   <TableRow key={finca.id}>
-                    <TableCell className="font-medium">{finca.nombre}</TableCell>
+                    <TableCell className="font-medium">
+                      {finca.nombre}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {finca.ubicacion ?? "—"}
                     </TableCell>
@@ -137,15 +152,10 @@ export function FincasPage() {
         </CardContent>
       </Card>
 
-      {/* El backend solo devuelve las fincas activas: `findAll` filtra por
-          `activa: true` y no acepta un parámetro para incluir las dadas de
-          baja. Decirlo es más honesto que una columna "Estado" que siempre
-          dice lo mismo. */}
       <p className="text-xs text-muted-foreground">
-        Las fincas dadas de baja no se listan. Como para darlas de baja hay que dar de baja
-        antes sus cuarteles, esos cuarteles quedan visibles en la búsqueda marcando «incluir
-        inactivos».
+        Para dar de baja una finca hay que dar de baja antes sus cuarteles. Una
+        finca dada de baja se reactiva desde «Ver dadas de baja».
       </p>
     </div>
-  )
+  );
 }

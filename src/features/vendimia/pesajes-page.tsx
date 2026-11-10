@@ -8,12 +8,14 @@ import { TablaPaginada } from "@/components/datos/tabla-paginada"
 import { usePaginacion } from "@/components/datos/paginacion"
 import { TableCell, TableHead, TableRow } from "@/components/ui/table"
 import { Ubicacion } from "@/components/datos/ubicacion"
+import { CorregirPesajeDialog } from "./corregir-pesaje-dialog"
 
 /**
- * Pesajes de un cuartel, en modo lectura (HU-26, decisión D-d).
+ * Pesajes de un cuartel (HU-26, decisión D-d).
  *
- * Se registran desde Mobile, en el campo. La oficina los ve pero no los carga:
- * es de donde sale el costeo y el seguimiento de la cosecha.
+ * Se registran desde Mobile, en el campo. La oficina no los carga, pero sí puede
+ * **corregir los observados**: los que quedaron así porque su remito fue rechazado.
+ * Sin eso, quedarían trabados fuera del circuito.
  */
 export function PesajesPage() {
   const { cuartelId } = useParams<{ cuartelId: string }>()
@@ -40,7 +42,7 @@ export function PesajesPage() {
       <div>
         <h1 className="text-xl font-semibold">Pesajes del cuartel</h1>
         <p className="text-sm text-muted-foreground">
-          Se cargan desde la aplicación móvil, en el campo. Acá se consultan en modo lectura.
+          Se cargan desde la aplicación móvil, en el campo. Los observados —de un remito rechazado— se pueden corregir desde acá.
         </p>
       </div>
 
@@ -63,6 +65,7 @@ export function PesajesPage() {
             <TableHead>Estado</TableHead>
             <TableHead>Remito</TableHead>
             <TableHead>Ubicación</TableHead>
+            <TableHead><span className="sr-only">Acciones</span></TableHead>
           </>
         }
         fila={(pesaje) => (
@@ -97,6 +100,9 @@ export function PesajesPage() {
             </TableCell>
             <TableCell>
               <Ubicacion latitud={pesaje.latitud} longitud={pesaje.longitud} />
+            </TableCell>
+            <TableCell className="text-right">
+              {pesaje.estado === "observado" && <CorregirPesajeDialog pesaje={pesaje} />}
             </TableCell>
           </TableRow>
         )}

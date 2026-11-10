@@ -57,7 +57,7 @@ export function LoginPage() {
       logoGrande
       pie={
         <p className="text-center text-sm">
-          <Link to="/olvide-mi-password" className="text-primary hover:underline">
+          <Link to="/olvide-mi-password" className="text-[#8E5FB8] hover:underline dark:text-primary">
             Olvidé mi contraseña
           </Link>
         </p>

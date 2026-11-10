@@ -54,6 +54,10 @@ export function actualizarUsuario(id: string, input: ActualizarUsuarioInput) {
   return modificar(`/usuarios/${id}`, input, usuarioSchema)
 }
 
+export function activarUsuario(id: string) {
+  return modificar(`/usuarios/${id}/activar`, undefined, z.unknown())
+}
+
 export function desactivarUsuario(id: string) {
   return modificar(`/usuarios/${id}/desactivar`, undefined, z.unknown())
 }

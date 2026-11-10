@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   actualizarUsuario,
   crearUsuario,
+  activarUsuario,
   desactivarUsuario,
   listarRoles,
   listarUsuarios,
@@ -55,6 +56,14 @@ export function useActualizarUsuario() {
   return useMutation({
     mutationFn: ({ id, ...input }: ActualizarUsuarioInput & { id: string }) =>
       actualizarUsuario(id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: clavesUsuarios.todos }),
+  })
+}
+
+export function useActivarUsuario() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => activarUsuario(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: clavesUsuarios.todos }),
   })
 }

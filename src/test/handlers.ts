@@ -883,6 +883,32 @@ export const handlers = [
     return HttpResponse.json(CORRELACION)
   }),
 
+  // Listado general de la empresa (solo lee) y búsqueda de novedades.
+  http.get(`${API}/inteligencia-agronomica/recomendaciones`, ({ request }) => {
+    const estado = new URL(request.url).searchParams.get("estado") ?? "activa"
+    return conRoles(
+      ["Propietario", "Agronomo"],
+      "/api/inteligencia-agronomica/recomendaciones",
+      () =>
+        RECOMENDACIONES.filter((r) => estado === "todas" || r.estado === "activa").map((r) => ({
+          ...r,
+          cuartel: {
+            id: IDS.cuartel,
+            nombre: "Cuartel 1",
+            finca: { id: IDS.finca, nombre: "Finca El Rosal" },
+          },
+        }))
+    )
+  }),
+
+  http.post(`${API}/inteligencia-agronomica/recomendaciones/evaluar`, () =>
+    conRoles(
+      ["Propietario", "Agronomo"],
+      "/api/inteligencia-agronomica/recomendaciones/evaluar",
+      () => ({ cuartelesEvaluados: 5, sinHistorico: 2, nuevas: 1 })
+    )
+  ),
+
   http.get(`${API}/inteligencia-agronomica/recomendaciones/:cuartelId`, () =>
     conRoles(
       ["Propietario", "Agronomo"],

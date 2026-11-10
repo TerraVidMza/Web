@@ -193,3 +193,26 @@ export const INDICADORES_COMPARABLES = [
 ] as const
 
 export type ClaveIndicador = (typeof INDICADORES_COMPARABLES)[number]["clave"]
+
+// ─── HU-30 · Listado general de la empresa ──────────────────────────────────
+
+/** Una recomendación con el cuartel y la finca a los que apunta. */
+export const recomendacionConUbicacionSchema = recomendacionSchema.extend({
+  cuartel: z.object({
+    id: uuid,
+    nombre: z.string(),
+    finca: z.object({ id: uuid, nombre: z.string() }),
+  }),
+})
+
+export type RecomendacionConUbicacion = z.infer<typeof recomendacionConUbicacionSchema>
+
+export const recomendacionesListadoSchema = z.array(recomendacionConUbicacionSchema)
+
+/** Resultado de buscar novedades en todos los cuarteles. */
+export const evaluacionRecomendacionesSchema = z.object({
+  cuartelesEvaluados: z.number(),
+  /** Cuarteles que todavía no tienen histórico suficiente para evaluarse. */
+  sinHistorico: z.number(),
+  nuevas: z.number(),
+})

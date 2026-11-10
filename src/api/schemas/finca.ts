@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { decimal, fechaHora, opcional, uuid } from "./comunes"
+import { advertenciasSchema, poligonoSchema } from "./geo"
 
 /**
  * `GET /fincas` devuelve las entidades con `cuartelesActivos` agregado.
@@ -19,6 +20,10 @@ const fincaBaseSchema = z.object({
   createdById: uuid,
   latitud: opcional(decimal),
   longitud: opcional(decimal),
+  /** Contorno de la finca. Con polígono, hectáreas y punto se derivan de él. */
+  poligono: opcional(poligonoSchema),
+  /** Solo en la respuesta de un alta o edición; ver `advertenciasSchema`. */
+  advertencias: advertenciasSchema,
   createdAt: fechaHora,
   updatedAt: opcional(fechaHora),
 })

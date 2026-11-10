@@ -7,6 +7,7 @@ import {
 } from "../schemas/cuartel"
 import { catalogoItemsSchema } from "../schemas/catalogo"
 import type { ParametrosPaginacion } from "../schemas/comunes"
+import type { PoligonoGeoJson } from "../schemas/geo"
 
 export interface CrearCuartelInput {
   fincaId: string
@@ -18,6 +19,12 @@ export interface CrearCuartelInput {
   hectareas?: number
   latitud?: number
   longitud?: number
+  /**
+   * Contorno del cuartel (D-037). En una edición, `null` lo quita y devuelve el
+   * cuartel a la carga manual. Con polígono el backend deriva hectáreas y punto,
+   * y **rechaza (400) un cambio manual de esos tres campos**: no hay que mandarlos.
+   */
+  poligono?: PoligonoGeoJson | null
 }
 
 /** El backend omite `fincaId` del DTO de update: un cuartel no cambia de finca. */
@@ -58,6 +65,10 @@ export function crearCuartel(input: CrearCuartelInput) {
 
 export function actualizarCuartel(id: string, input: ActualizarCuartelInput) {
   return modificar(`/cuarteles/${id}`, input, cuartelSchema)
+}
+
+export function activarCuartel(id: string) {
+  return modificar(`/cuarteles/${id}/activar`, undefined, cuartelSchema)
 }
 
 export function desactivarCuartel(id: string) {

@@ -1,57 +1,66 @@
-import { describe, expect, it } from "vitest"
-import { http, HttpResponse } from "msw"
+import { describe, expect, it, vi } from "vitest"
 import { RecomendacionesPage } from "./recomendaciones-page"
 import { iniciarSesionComo, renderConProveedores, screen, waitFor, within } from "@/test/utils"
 import { servidor } from "@/test/setup"
 
-async function elegirCuartel(usuario: ReturnType<typeof renderConProveedores>["usuario"]) {
-  await usuario.click(await screen.findByRole("combobox", { name: /^finca$/i }))
-  await usuario.click(await screen.findByRole("option", { name: "Finca El Rosal" }))
-  await usuario.click(screen.getByRole("combobox", { name: /^cuartel$/i }))
-  await usuario.click(await screen.findByRole("option", { name: "Cuartel 1" }))
-}
+// Los avisos son toasts de sonner, que no se montan en los tests: se espían.
+const avisos = vi.hoisted(() => ({
+  success: vi.fn<(mensaje: string) => void>(),
+  info: vi.fn<(mensaje: string) => void>(),
+  error: vi.fn<(mensaje: string) => void>(),
+  warning: vi.fn<(mensaje: string) => void>(),
+}))
+vi.mock("sonner", async (importarOriginal) => ({
+  ...(await importarOriginal<typeof import("sonner")>()),
+  toast: avisos,
+}))
 
 describe("RecomendacionesPage (HU-30)", () => {
-  it("sin histórico suficiente muestra cuántos días faltan, no un error", async () => {
-    iniciarSesionComo("Propietario")
-    servidor.use(
-      http.get("http://localhost:3000/api/inteligencia-agronomica/recomendaciones/:cuartelId", () =>
-        HttpResponse.json({
-          disponible: false,
-          diasConDatos: 12,
-          diasMinimos: 30,
-          diasFaltantes: 18,
-          mensaje: "Faltan 18 día(s) de datos para generar recomendaciones para este cuartel.",
-          recomendaciones: [],
-        })
-      )
-    )
-    const { usuario } = renderConProveedores(<RecomendacionesPage />)
-    await elegirCuartel(usuario)
-
-    expect(await screen.findByText("Todavía no hay histórico suficiente")).toBeInTheDocument()
-    expect(screen.getByText(/Faltan 18 día\(s\) de datos/)).toBeInTheDocument()
-  })
-
-  it("arranca mostrando solo las activas", async () => {
+  it("lista las activas de toda la empresa, indicando finca, cuartel y por qué", async () => {
     iniciarSesionComo("Agronomo")
-    const { usuario } = renderConProveedores(<RecomendacionesPage />)
-    await elegirCuartel(usuario)
+    renderConProveedores(<RecomendacionesPage />)
 
     expect(await screen.findByText(/Revisar el sistema de riego/i)).toBeInTheDocument()
+    expect(screen.getByText("Finca El Rosal · Cuartel 1")).toBeInTheDocument()
+    expect(screen.getByText(/humedad de suelo estuvo bajo el umbral/i)).toBeInTheDocument()
     // La ya aplicada no está hasta cambiar de pestaña.
     expect(screen.queryByText(/Verificar la calibración del nodo/i)).not.toBeInTheDocument()
+  })
+
+  it("«Todas» suma las ya resueltas", async () => {
+    iniciarSesionComo("Agronomo")
+    const { usuario } = renderConProveedores(<RecomendacionesPage />)
+    await screen.findByText(/Revisar el sistema de riego/i)
 
     await usuario.click(screen.getByRole("tab", { name: /todas/i }))
+
     expect(await screen.findByText(/Verificar la calibración del nodo/i)).toBeInTheDocument()
   })
 
   it("la severidad va con etiqueta, no solo con color", async () => {
     iniciarSesionComo("Agronomo")
-    const { usuario } = renderConProveedores(<RecomendacionesPage />)
-    await elegirCuartel(usuario)
+    renderConProveedores(<RecomendacionesPage />)
 
     expect(await screen.findByText("Severidad alta")).toBeInTheDocument()
+  })
+
+  it("«Buscar nuevas» evalúa y cuenta lo que apareció", async () => {
+    iniciarSesionComo("Agronomo")
+    const llamadas: string[] = []
+    servidor.events.on("request:start", ({ request }) => {
+      if (request.method === "POST" && request.url.endsWith("/recomendaciones/evaluar")) {
+        llamadas.push(request.url)
+      }
+    })
+
+    const { usuario } = renderConProveedores(<RecomendacionesPage />)
+    await screen.findByText(/Revisar el sistema de riego/i)
+    await usuario.click(screen.getByRole("button", { name: /buscar nuevas/i }))
+
+    await waitFor(() => expect(llamadas).toHaveLength(1))
+    await waitFor(() => expect(avisos.success).toHaveBeenCalled())
+    expect(avisos.success.mock.calls[0][0]).toMatch(/1 recomendación nueva en 5 cuarteles/)
+    expect(avisos.success.mock.calls[0][0]).toMatch(/2 todavía sin histórico suficiente/)
   })
 
   it("resuelve una recomendación con nota", async () => {
@@ -64,7 +73,6 @@ describe("RecomendacionesPage (HU-30)", () => {
     })
 
     const { usuario } = renderConProveedores(<RecomendacionesPage />)
-    await elegirCuartel(usuario)
     await screen.findByText(/Revisar el sistema de riego/i)
 
     await usuario.click(screen.getByRole("button", { name: /resolver/i }))
@@ -82,7 +90,6 @@ describe("RecomendacionesPage (HU-30)", () => {
   it("una resuelta no ofrece reabrirse", async () => {
     iniciarSesionComo("Agronomo")
     const { usuario } = renderConProveedores(<RecomendacionesPage />)
-    await elegirCuartel(usuario)
     await screen.findByText(/Revisar el sistema de riego/i)
     await usuario.click(screen.getByRole("tab", { name: /todas/i }))
 
@@ -97,8 +104,7 @@ describe("RecomendacionesPage (HU-30)", () => {
 
   it("le niega las recomendaciones al Capataz", async () => {
     iniciarSesionComo("Capataz")
-    const { usuario } = renderConProveedores(<RecomendacionesPage />)
-    await elegirCuartel(usuario)
+    renderConProveedores(<RecomendacionesPage />)
 
     expect(await screen.findByText(/No se pudieron cargar los datos/i)).toBeInTheDocument()
   })

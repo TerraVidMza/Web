@@ -66,44 +66,44 @@
  * se propaga a toda la app sin tocar el código de cada pantalla.
  */
 :root {
-    --background: #FAF6EE;
-    --foreground: #1F1810;
+    --background: #F8F9FA;
+    --foreground: #2F1A52;
     --card: #FFFFFF;
-    --card-foreground: #1F1810;
+    --card-foreground: #2F1A52;
     --popover: #FFFFFF;
-    --popover-foreground: #1F1810;
-    --primary: #5C6B2E;
+    --popover-foreground: #2F1A52;
+    --primary: #8B5BB5;
     --primary-foreground: #FFFFFF;
-    --secondary: #F5EFE0;
-    --secondary-foreground: #1F1810;
-    --muted: #F5EFE0;
-    --muted-foreground: #7A6A5A;
-    --accent: #A4B560;
-    --accent-foreground: #1F1810;
+    --secondary: #F1F3F4;
+    --secondary-foreground: #2F1A52;
+    --muted: #F1F3F4;
+    --muted-foreground: #5F6368;
+    --accent: #F1E9F8;
+    --accent-foreground: #2F1A52;
     --destructive: #C0392B;
-    --border: #D1CECC;
-    --input: #D1CECC;
-    --ring: #5C6B2E;
+    --border: #E0E0E0;
+    --input: #E0E0E0;
+    --ring: #8B5BB5;
     --success: #27AE60;
     --success-foreground: #FFFFFF;
     --warning: #D35400;
     --warning-foreground: #FFFFFF;
     --info: #2B6DD1;
     --info-foreground: #FFFFFF;
-    --chart-1: #5C6B2E;
-    --chart-2: #A4B560;
-    --chart-3: #C4A882;
+    --chart-1: #8B5BB5;
+    --chart-2: #77A356;
+    --chart-3: #C3A5E0;
     --chart-4: #2B6DD1;
     --chart-5: #D35400;
     --radius: 0.625rem;
-    --sidebar: #3E2B1F;
-    --sidebar-foreground: #F5EFE0;
-    --sidebar-primary: #5C6B2E;
+    --sidebar: #4A3566;
+    --sidebar-foreground: #F8F9FA;
+    --sidebar-primary: #8B5BB5;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #4A362A;
+    --sidebar-accent: #5B4478;
     --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #4A362A;
-    --sidebar-ring: #A4B560;
+    --sidebar-border: #5B4478;
+    --sidebar-ring: #C3A5E0;
 }
 
 .dark {

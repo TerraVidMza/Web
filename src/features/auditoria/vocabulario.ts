@@ -35,7 +35,7 @@ export const ENTIDADES_AUDITABLES = [
   "recomendacion",
   "articulo_ayuda",
   "ticket_soporte",
-] as const
+] as const;
 
 export const ACCIONES_AUDITABLES = [
   "LOGIN",
@@ -93,16 +93,16 @@ export const ACCIONES_AUDITABLES = [
   "ACTUALIZAR_ARTICULO",
   "DESACTIVAR_ARTICULO",
   "CREAR_TICKET",
-] as const
+] as const;
 
 /** `CREAR_USUARIO` -> `Crear usuario`. */
 export function etiquetaAccion(accion: string): string {
-  const texto = accion.replaceAll("_", " ").toLowerCase()
-  return texto.charAt(0).toUpperCase() + texto.slice(1)
+  const texto = accion.replaceAll("_", " ").toLowerCase();
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
 /** `catalogo_item` -> `Catalogo item`. */
 export function etiquetaEntidad(entidad: string): string {
-  const texto = entidad.replaceAll("_", " ")
-  return texto.charAt(0).toUpperCase() + texto.slice(1)
+  const texto = entidad.replaceAll("_", " ");
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }

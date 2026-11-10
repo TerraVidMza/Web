@@ -22,6 +22,7 @@ export const ESTADOS: Record<string, { etiqueta: string; tono: TonoEstado }> = {
   borrador: { etiqueta: "Borrador", tono: "alerta" },
   aprobado: { etiqueta: "Aprobado", tono: "exito" },
   rechazado: { etiqueta: "Rechazado", tono: "peligro" },
+  anulado: { etiqueta: "Anulado", tono: "neutro" },
 
   // EstadoPesaje (HU-26)
   pendiente_remito: { etiqueta: "Pendiente de remito", tono: "alerta" },
