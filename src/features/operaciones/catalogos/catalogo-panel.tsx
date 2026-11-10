@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { toast } from "sonner"
-import { DollarSign, MoreHorizontal, Pencil, Plus, Power } from "lucide-react"
+import { DollarSign, MoreHorizontal, Pencil, Plus, Power, RotateCcw } from "lucide-react"
 import {
   useCatalogoCosteable,
+  useActivarCatalogoCosteable,
   useDesactivarCatalogoCosteable,
 } from "./use-catalogo-costeable"
 import { CatalogoDialog } from "./catalogo-dialog"
@@ -53,6 +54,7 @@ export function CatalogoPanel({ config }: { config: CatalogoCosteableConfig }) {
   const [viendoCostosDe, setViendoCostosDe] = useState<Insumo | null>(null)
   const consulta = useCatalogoCosteable(config, incluirInactivos)
   const desactivar = useDesactivarCatalogoCosteable(config)
+  const activar = useActivarCatalogoCosteable(config)
   const { user } = useAuth()
 
   const items = consulta.data ?? []
@@ -177,6 +179,25 @@ export function CatalogoPanel({ config }: { config: CatalogoCosteableConfig }) {
                                   >
                                     <Power className="size-4" aria-hidden="true" />
                                     Dar de baja
+                                  </DropdownMenuItem>
+                                </DialogoConfirmacion>
+                              )}
+
+                              {puedeDarDeBaja && !item.activo && (
+                                <DialogoConfirmacion
+                                  titulo={`¿Reactivar ${item.nombre}?`}
+                                  descripcion="Vuelve a ofrecerse al cargar labores nuevas."
+                                  textoConfirmar="Reactivar"
+                                  tono="confirmacion"
+                                  errorPorDefecto={`No se pudo reactivar ${config.articulo} ${config.singular}`}
+                                  onConfirmar={async () => {
+                                    await activar.mutateAsync(item.id)
+                                    toast.success(`${item.nombre} está activo de nuevo`)
+                                  }}
+                                >
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <RotateCcw className="size-4" aria-hidden="true" />
+                                    Reactivar
                                   </DropdownMenuItem>
                                 </DialogoConfirmacion>
                               )}

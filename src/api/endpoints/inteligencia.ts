@@ -8,6 +8,8 @@ import {
   correlacionSchema,
   recomendacionSchema,
   recomendacionesSchema,
+  recomendacionesListadoSchema,
+  evaluacionRecomendacionesSchema,
 } from "../schemas/inteligencia"
 
 // ─── Campañas (D-014) ───────────────────────────────────────────────────────
@@ -144,5 +146,28 @@ export function fijarMetaCosecha(campaniaId: string, cuartelId: string, metaKg: 
     `/campanias/${campaniaId}/metas/${cuartelId}`,
     { metaKg },
     z.object({ cuartelId: z.string(), metaKg: z.number().nullable() })
+  )
+}
+
+/**
+ * Listado general de la empresa: **solo lee** lo ya generado, no evalúa reglas.
+ * Por defecto trae las activas.
+ */
+export function listarRecomendaciones(params: { estado?: "activa" | "todas"; fincaId?: string } = {}) {
+  return obtener("/inteligencia-agronomica/recomendaciones", recomendacionesListadoSchema, {
+    params,
+  })
+}
+
+/**
+ * Busca recomendaciones nuevas en todos los cuarteles (o los de una finca).
+ * Evalúa las reglas y persiste lo que corresponda: es la acción explícita que
+ * antes ocurría sola al abrir un cuartel.
+ */
+export function evaluarRecomendaciones(fincaId?: string) {
+  return crear(
+    "/inteligencia-agronomica/recomendaciones/evaluar",
+    fincaId ? { fincaId } : {},
+    evaluacionRecomendacionesSchema
   )
 }

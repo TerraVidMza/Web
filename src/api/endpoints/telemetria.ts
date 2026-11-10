@@ -62,6 +62,10 @@ export function generarCredencialMqtt(sensorId: string) {
   return crear(`/sensores/${sensorId}/credenciales-mqtt`, undefined, credencialMqttSchema)
 }
 
+export function activarSensor(id: string) {
+  return modificar(`/sensores/${id}/activar`, undefined, sensorSchema)
+}
+
 export function desactivarSensor(id: string) {
   return modificar(`/sensores/${id}/desactivar`, undefined, sensorSchema)
 }

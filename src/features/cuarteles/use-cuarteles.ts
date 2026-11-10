@@ -3,6 +3,7 @@ import {
   actualizarCuartel,
   buscarCuarteles,
   crearCuartel,
+  activarCuartel,
   desactivarCuartel,
   listarCuartelesDeFinca,
   variedadesDeFinca,
@@ -85,6 +86,14 @@ export function useActualizarCuartel() {
  * cuelgan de él. Sin campaña definida cuenta todo el histórico, que es el lado
  * conservador.
  */
+export function useActivarCuartel() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => activarCuartel(id),
+    onSuccess: () => invalidarTodo(queryClient),
+  })
+}
+
 export function useDesactivarCuartel() {
   const queryClient = useQueryClient()
   return useMutation({

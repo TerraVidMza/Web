@@ -117,3 +117,25 @@ export function useComparacion(cuartelId: string, params: CompararParams | null)
     placeholderData: keepPreviousData,
   })
 }
+
+/** Listado general de recomendaciones de la empresa. No evalúa: solo lee lo generado. */
+export function useListadoRecomendaciones(params: {
+  estado: "activa" | "todas"
+  fincaId?: string
+}) {
+  return useQuery({
+    queryKey: ["inteligencia", "recomendaciones", "listado", params] as const,
+    queryFn: () => api.listarRecomendaciones(params),
+    staleTime: CACHE.OPERATIVO,
+  })
+}
+
+/** Busca recomendaciones nuevas en todos los cuarteles y refresca el listado. */
+export function useEvaluarRecomendaciones() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (fincaId?: string) => api.evaluarRecomendaciones(fincaId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["inteligencia", "recomendaciones"] }),
+  })
+}
