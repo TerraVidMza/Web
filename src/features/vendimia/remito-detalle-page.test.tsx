@@ -46,6 +46,22 @@ describe("RemitoDetallePage (HU-27)", () => {
     expect(screen.getByText(/Despachados 3\.500 kg/i)).toBeInTheDocument()
   })
 
+  it("el remito aprobado muestra quién lo aprobó y cuándo", async () => {
+    iniciarSesionComo("Capataz")
+    render(IDS.remitoAprobado)
+
+    await screen.findByRole("heading", { name: "REM-2026-00011" })
+    expect(screen.getByText((_, el) => el?.tagName === "P" && /^Aprobado por Marta Propietaria el /.test(el.textContent ?? ""))).toBeInTheDocument()
+  })
+
+  it("un borrador no muestra resolución", async () => {
+    iniciarSesionComo("Propietario")
+    render(IDS.remitoBorrador)
+
+    await screen.findByRole("heading", { name: "REM-2026-00012" })
+    expect(screen.queryByText(/Aprobado por/)).not.toBeInTheDocument()
+  })
+
   it("al Capataz le oculta la liquidación, que es dato económico", async () => {
     iniciarSesionComo("Capataz")
     render(IDS.remitoAprobado)

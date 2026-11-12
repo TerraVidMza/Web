@@ -3,7 +3,7 @@ import { ArrowLeft, Printer } from "lucide-react"
 import { useLiquidacion, useRemito } from "./use-vendimia"
 import { AccionesRemito } from "./acciones-remito"
 import { LiquidacionDialog } from "./liquidacion-dialog"
-import { brutoDeLiquidacion } from "@/api/schemas/vendimia"
+import { brutoDeLiquidacion, type RemitoDetalle } from "@/api/schemas/vendimia"
 import { useAuth } from "@/context/auth-context"
 import { puede } from "@/auth/permisos"
 import { useFormato } from "@/context/configuracion-context"
@@ -75,6 +75,7 @@ export function RemitoDetallePage() {
                   Jornada del {formato.fecha(remito.fecha)} · generado el{" "}
                   {formato.fechaHora(remito.fechaGeneracion)}
                 </p>
+                <Resolucion remito={remito} />
               </div>
 
               <div className="flex flex-wrap items-center gap-2 print:hidden">
@@ -203,6 +204,35 @@ export function RemitoDetallePage() {
         )}
       </EstadoConsulta>
     </div>
+  )
+}
+
+/**
+ * Quién resolvió el remito y cuándo (HU-27): la vista del aprobado es el
+ * documento para la bodega, y sin el aprobador no se sabía quién lo validó.
+ */
+function Resolucion({ remito }: { remito: RemitoDetalle }) {
+  const formato = useFormato()
+  const [verbo, nombre, cuando] =
+    remito.estado === "aprobado"
+      ? ["Aprobado", remito.aprobadoPorNombre, remito.fechaAprobacion]
+      : remito.estado === "rechazado"
+        ? ["Rechazado", remito.rechazadoPorNombre, remito.fechaRechazo]
+        : remito.estado === "anulado"
+          ? ["Anulado", remito.anuladoPorNombre, remito.fechaAnulacion]
+          : [null, null, null]
+  if (!verbo || (!nombre && !cuando)) return null
+  return (
+    <p className="text-sm text-muted-foreground">
+      {verbo}
+      {nombre && (
+        <>
+          {" "}
+          por <span className="font-medium text-foreground">{nombre}</span>
+        </>
+      )}
+      {cuando && <> el {formato.fechaHora(cuando)}</>}
+    </p>
   )
 }
 
