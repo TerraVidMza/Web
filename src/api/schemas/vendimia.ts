@@ -125,9 +125,17 @@ export type Remito = z.infer<typeof remitoSchema>
 
 export const remitosPaginadosSchema = paginado(remitoSchema)
 
-/** `GET /remitos/:id` agrega los pesajes que lo componen. */
+/**
+ * `GET /remitos/:id` agrega los pesajes que lo componen y, para la vista del
+ * remito resuelto (HU-27), el nombre de quien lo aprobó, rechazó o anuló.
+ * Son opcionales: un backend anterior no los manda y la pantalla lo tolera.
+ */
 export const remitoDetalleSchema = remitoSchema.extend({
   pesajes: z.array(pesajeSchema).default([]),
+  aprobadoPorNombre: opcional(z.string()),
+  rechazadoPorNombre: opcional(z.string()),
+  anuladoPorNombre: opcional(z.string()),
+  fechaAnulacion: opcional(fechaHora),
 })
 
 export type RemitoDetalle = z.infer<typeof remitoDetalleSchema>

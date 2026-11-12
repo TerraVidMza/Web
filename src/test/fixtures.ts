@@ -691,6 +691,7 @@ export const REMITOS = [
     fechaGeneracion: "2026-03-01T20:00:00.000Z",
     fechaAprobacion: "2026-03-02T10:00:00.000Z",
     fechaRechazo: null,
+    aprobadoPorNombre: "Marta Propietaria",
     cuartel: cuartelDeRemito,
   },
 ]
